@@ -9,10 +9,13 @@ main_module = Blueprint(
 @main_module.route('/')
 def index():
 
-    bus = Bus(4940100)
+    bus_ids = [4940100, 4940110, 90000250, 90000039, 90000216, 90000198, 90000333, 90000340, 90000159]
+    buses = map(Bus, bus_ids)
+    station_locations_of_buses = [b.get_station_locations() for b in buses]
 
     context = dict(
-        station_locations=bus.get_station_locations(),
+        buses=buses,
+        station_locations_of_buses=station_locations_of_buses,
     )
 
     return render_template('index.html', **context)

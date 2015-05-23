@@ -181,4 +181,5 @@ class Bus(object):
 if __name__ == '__main__':
     station = Station(47105)
     bus = Bus(4940100)
-    print(list(bus.get_station_positions()))
+    print(list(map(int, station.get_bus_route_ids())))
+    #print(list(bus.get_station_positions()))
