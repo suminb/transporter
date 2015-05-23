@@ -7,7 +7,7 @@ STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
 
 
 def auto_fetch(func):
-    """A class method description that calls fetch() if self.cached_data is not available."""
+    """A class method descriptor that calls fetch() if self.cached_data is not available."""
     def wrapper(self, *args, **kwargs):
         if self.cached_data is None:
             self.fetch()
@@ -168,9 +168,10 @@ class Bus(object):
             yield station_info['arsId']
 
     @auto_fetch
-    def get_station_positions(self):
+    def get_station_locations(self):
         for station_info in self.cached_data['resultList']:
-            yield float(station_info['gpsX']), float(station_info['gpsY'])
+            # (latitude, longitude)
+            yield [float(station_info['gpsY']), float(station_info['gpsX'])]
 
     @auto_fetch
     def get_current_position(self):
