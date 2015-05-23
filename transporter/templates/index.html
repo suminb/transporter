@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div id="map" style="width:960px;height:600px;"></div>
+
+<script type="text/javascript" src="//apis.daum.net/maps/maps3.js?apikey=ded77085f21a1871bae6ebb2fb2997c9"></script>
+<script>
+    var container = document.getElementById('map');
+    var options = {
+        center: new daum.maps.LatLng(37.394874, 127.111239),
+        level: 4,
+        scrollwheel: true,
+        disableDoubleClick: false
+    };
+
+    var map = new daum.maps.Map(container, options);
+
+    // Add a zoom control on the map
+    var zoomControl = new daum.maps.ZoomControl();
+    map.addControl(zoomControl, daum.maps.ControlPosition.RIGHT);
+</script>
+{% endblock %}
