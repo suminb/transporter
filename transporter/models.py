@@ -140,7 +140,16 @@ class Station(db.Model, CRUDMixin):
     latitude = db.Column(db.Float(precision=53))
     longitude = db.Column(db.Float(precision=53))
 
-    def __init__(self, id, number, name, latitude, longitude):
+    def __init__(self, id: int, number: str, name: str, latitude: float, longitude: float):
+        """
+
+        :param id:
+        :param number: A station number or '미정차'
+        :param name:
+        :param latitude:
+        :param longitude:
+        :return:
+        """
         self.id = id
         self.number = number
         self.name = name
@@ -163,7 +172,7 @@ class Station(db.Model, CRUDMixin):
         return vincenty((latitude, longitude), (self.latitude, self.longitude)).m
 
     @staticmethod
-    def get_nearby_stations(latitude, longitude, radius=500):
+    def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
         """
         Request Example:
 
@@ -203,7 +212,8 @@ class Station(db.Model, CRUDMixin):
 
 class Route(object):
     @staticmethod
-    def get_stations(route_id):
+    def get_stations(route_id: int):
+        """Get all stations belonging to a particular route."""
         url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
         data = dict(busRouteId=route_id)
 
@@ -213,6 +223,7 @@ class Route(object):
             try:
                 station_number = int(station_info['stationNo'])
             except ValueError:
+                # `station_number` may be '미정차'
                 station_number = None
 
             yield Station(id=station_info['station'],

@@ -33,56 +33,7 @@ class Map(object):
 
 
 class Bus(object):
-    """
 
-    busType: 차량유형 (0:일반버스, 1:저상버스, 2:굴절버스)
-    routeType: 노선 유형 (1:공항, 3:간선, 4:지선, 5:순환, 6:광역, 7:인천, 8:경기, 9:폐지, 0:공용)
-
-    Request Example: (버스 노선 정보)
-
-        curl 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms' -H 'Host: m.bus.go.kr' \
-        -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0'\
-        -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' \
-        --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' \
-        -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' \
-        -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=eFsTjEaatS5rpOJ5lzkyofvYO4PF1BeaJRtuSvxXTpXCoREz6prkf17gDanTE4b3.bms-info1_servlet_engine32' \
-        -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'busRouteId=4940100'
-
-    Example Response:
-
-        {
-            "error": {
-                "errorCode": "0000",
-                "errorMessage": "\uc131\uacf5"
-            },
-            "resultList": [
-                {
-                    "arsId": "47171",
-                    "beginTm": "04:30",
-                    "busRouteId": "4940100",
-                    "busRouteNm": "9401",
-                    "busType": "N",
-                    "direction": "\uc11c\uc6b8\uc5ed",
-                    "existYn": "N",
-                    "fullSectDist": "0",
-                    "gpsX": "127.10610729246586",
-                    "gpsY": "37.34227547211239",
-                    "lastTm": "23:00",
-                    "routeType": "6",
-                    "sectSpd": "0",
-                    "sectSpdCol": "SpeedRed",
-                    "section": "0",
-                    "seq": "1",
-                    "station": "35680",
-                    "stationNm": "\uad6c\ubbf8\ub3d9\ucc28\uace0\uc9c0\uc55e",
-                    "stationNo": "47171",
-                    "transYn": "N",
-                    "trnstnid": "36839"
-                },
-            ]
-        }
-
-    """
     station_ids = None
     station_locations = None
 
@@ -90,6 +41,56 @@ class Bus(object):
         self.id = id
 
     def fetch(self):
+        """
+
+        busType: 차량유형 (0:일반버스, 1:저상버스, 2:굴절버스)
+        routeType: 노선 유형 (1:공항, 3:간선, 4:지선, 5:순환, 6:광역, 7:인천, 8:경기, 9:폐지, 0:공용)
+
+        Request Example: (버스 노선 정보)
+
+            curl 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms' -H 'Host: m.bus.go.kr' \
+            -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0'\
+            -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' \
+            --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' \
+            -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' \
+            -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=eFsTjEaatS5rpOJ5lzkyofvYO4PF1BeaJRtuSvxXTpXCoREz6prkf17gDanTE4b3.bms-info1_servlet_engine32' \
+            -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'busRouteId=4940100'
+
+        Example Response:
+
+            {
+                "error": {
+                    "errorCode": "0000",
+                    "errorMessage": "\uc131\uacf5"
+                },
+                "resultList": [
+                    {
+                        "arsId": "47171",
+                        "beginTm": "04:30",
+                        "busRouteId": "4940100",
+                        "busRouteNm": "9401",
+                        "busType": "N",
+                        "direction": "\uc11c\uc6b8\uc5ed",
+                        "existYn": "N",
+                        "fullSectDist": "0",
+                        "gpsX": "127.10610729246586",
+                        "gpsY": "37.34227547211239",
+                        "lastTm": "23:00",
+                        "routeType": "6",
+                        "sectSpd": "0",
+                        "sectSpdCol": "SpeedRed",
+                        "section": "0",
+                        "seq": "1",
+                        "station": "35680",
+                        "stationNm": "\uad6c\ubbf8\ub3d9\ucc28\uace0\uc9c0\uc55e",
+                        "stationNo": "47171",
+                        "transYn": "N",
+                        "trnstnid": "36839"
+                    },
+                ]
+            }
+
+        """
         resp = requests.post(BUS_ROUTE_INFO_URL, data=dict(busRouteId=self.id))
         self.cached_data = json.loads(resp.text)
 
@@ -108,9 +109,3 @@ class Bus(object):
 
     def get_current_position(self):
         raise NotImplementedError()
-
-
-if __name__ == '__main__':
-    # station = Station(47105)
-    # bus = Bus(4940100)
-    pass
