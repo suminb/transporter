@@ -1,3 +1,5 @@
+from geopy.distance import vincenty
+
 import requests
 import json
 
@@ -5,6 +7,8 @@ BUS_ROUTE_LIST_URL = 'http://m.bus.go.kr/mBus/bus/getBusRouteList.bms'
 BUS_ROUTE_INFO_URL = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
 STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
 
+# 버스 정류장 번호로 검색
+# m.bus.go.kr/mBus/bus.bms?search=01003
 
 def auto_fetch(func):
     """A class method descriptor that calls fetch() if self.cached_data is not available."""
@@ -15,10 +19,15 @@ def auto_fetch(func):
     return wrapper
 
 
+class Map(object):
+    def get_nearest_station(self, latitude, longitude):
+        pass
+
+
 class Station(object):
     """
 
-    Request Example:
+    Request Example: (정류장을 거쳐가는 버스 정보)
 
         curl 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms' -H 'Host: m.bus.go.kr' \
          -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' \
@@ -88,6 +97,9 @@ class Station(object):
     """
     cached_data = None
 
+    latitude = None
+    longitude = None
+
     def __init__(self, id):
         self.id = id
 
@@ -102,11 +114,53 @@ class Station(object):
         for bus_info in self.cached_data['resultList']:
             yield bus_info['busRouteId']
 
+    def get_distance_to(self, latitude, longitude):
+        assert self.latitude is not None
+        assert self.longitude is not None
+        return vincenty((latitude, longitude), (self.latitude, self.longitude)).m
+
+    @staticmethod
+    def get_stations_nearby(latitude, longitude):
+        """
+        Request Example:
+
+             curl 'http://m.bus.go.kr/mBus/bus/getStationByPos.bms' -H 'Host: m.bus.go.kr' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=j4msoXxp7Kb3T9EXKtcmmAOyAc9GpawnTv1VI981MuQNkpo86W8bFPGki47MCaEq.bms-info1_servlet_engine32' -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'tmX=127.1223458&tmY=37.3988069&radius=300' | iconv -f cp949 -t utf-8 | python -m json.tool
+
+        Response Example:
+
+            {
+                "error": {
+                    "errorCode": "0000",
+                    "errorMessage": "\uc131\uacf5"
+                },
+                "resultList": [
+                    {
+                        "arsId": "0",
+                        "dist": "153",
+                        "gpsX": "127.12347574483393",
+                        "gpsY": "37.39985681895763",
+                        "posX": "210931.81833",
+                        "posY": "433403.53304",
+                        "stationId": "52913",
+                        "stationNm": "\uc544\ub984\ub9c8\uc744.\ubc29\uc544\ub2e4\ub9ac\uc0ac\uac70\ub9ac",
+                        "stationTp": "0"
+                    },
+                    ...
+                ]
+            }
+
+        """
+        pass
+
+
 
 class Bus(object):
     """
 
-    Request Example:
+    busType: 차량유형 (0:일반버스, 1:저상버스, 2:굴절버스)
+    routeType: 노선 유형 (1:공항, 3:간선, 4:지선, 5:순환, 6:광역, 7:인천, 8:경기, 9:폐지, 0:공용)
+
+    Request Example: (버스 노선 정보)
 
         curl 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms' -H 'Host: m.bus.go.kr' \
         -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0'\
