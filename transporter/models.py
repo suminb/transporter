@@ -2,13 +2,16 @@ from transporter import create_app
 from transporter.bus import auto_fetch
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
 from datetime import datetime
 import click
 import requests
 import json
 
+
 db = SQLAlchemy()
+JsonType = db.String().with_variant(JSON(), 'postgresql')
 
 
 class CRUDMixin(object):
@@ -210,16 +213,72 @@ class Station(db.Model, CRUDMixin):
         return json.loads(resp.text)['resultList']
 
 
-class Route(object):
+route_station_assoc = db.Table(
+    'route_station_assoc',
+    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
+    db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
+    db.Column('sequence', db.Integer),
+)
+
+# Many-to-many relationship between routes
+# route_route_assoc = db.Table(
+#     'route_station_assoc',
+#     db.Column('route_id1', db.Integer, db.ForeignKey('route.id')),
+#     db.Column('route_id2', db.Integer, db.ForeignKey('route.id')),
+#     db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
+# )
+
+
+class Route(db.Model, CRUDMixin):
+
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.String)
+
+    #: Route type
+    type = db.Column(db.Integer)
+
+    #: Many-to-many relationship between route and station
+    stations = db.relationship('Station', secondary=route_station_assoc, backref='route', lazy='dynamic')
+
+    raw = db.Column(JsonType)
+
     @staticmethod
-    def get_stations(route_id: int):
-        """Get all stations belonging to a particular route."""
+    def fetch_raw(route_id: int):
+        """Fetch raw JSON data for a particular route."""
+
         url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
         data = dict(busRouteId=route_id)
 
         resp = requests.post(url, data=data)
 
-        for station_info in json.loads(resp.text)['resultList']:
+        return json.loads(resp.text)
+
+    @staticmethod
+    def store_route_info(route_id: int):
+
+        raw = Route.fetch_raw(route_id)
+
+        assert len(raw['resultList']) > 0
+
+        raw_route = raw['resultList'][0]
+
+        try:
+            route = Route.create(
+                id=raw_route['busRouteId'],
+                number=raw_route['busRouteNm'],
+                type=raw_route['routeType'],
+            )
+        except IntegrityError:
+            db.session.rollback()
+
+
+    @staticmethod
+    def get_stations(route_id: int):
+        """Get all stations belonging to a particular route."""
+
+        raw = Route.fetch_raw(route_id)
+
+        for station_info in raw['resultList']:
             try:
                 station_number = int(station_info['stationNo'])
             except ValueError:
@@ -246,7 +305,19 @@ def create_db():
 
 
 @cli.command()
-def cache_stations():
+def fetch_route():
+    app = create_app(__name__)
+    with app.app_context():
+        Route.store_route_info(4940300)
+
+        for station in Route.get_stations(4940300):
+            try:
+                station.save()
+            except IntegrityError:
+                db.session.rollback()
+
+@cli.command()
+def fetch_stations():
     app = create_app(__name__)
     with app.app_context():
         for station in Route.get_stations(4940300):
