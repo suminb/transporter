@@ -272,6 +272,7 @@ class Route(db.Model, CRUDMixin):
                 id=first_node['busRouteId'],
                 number=first_node['busRouteNm'],
                 type=first_node['routeType'],
+                raw=raw,
             )
             log.info('Stored route {}'.format(route.number))
 
@@ -285,6 +286,9 @@ class Route(db.Model, CRUDMixin):
             except ValueError:
                 # `station_number` may be '미정차'
                 station_number = None
+
+            if station_number == 0:
+                log.warn('Rejecting station {} for having a station number of zero'.format(station_info['stationNm']))
 
             try:
                 station = Station.create(
