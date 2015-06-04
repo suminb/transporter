@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
 from datetime import datetime
+from logbook import Logger
 import click
 import requests
 import json
@@ -12,6 +13,8 @@ import json
 
 db = SQLAlchemy()
 JsonType = db.String().with_variant(JSON(), 'postgresql')
+
+log = Logger()
 
 
 class CRUDMixin(object):
@@ -260,23 +263,21 @@ class Route(db.Model, CRUDMixin):
 
         assert len(raw['resultList']) > 0
 
-        raw_route = raw['resultList'][0]
+        first_node = raw['resultList'][0]
+
+        log.info('Fetching route info...')
 
         try:
             route = Route.create(
-                id=raw_route['busRouteId'],
-                number=raw_route['busRouteNm'],
-                type=raw_route['routeType'],
+                id=first_node['busRouteId'],
+                number=first_node['busRouteNm'],
+                type=first_node['routeType'],
             )
+            log.info('Stored route {}'.format(route.number))
+
         except IntegrityError:
             db.session.rollback()
-
-
-    @staticmethod
-    def get_stations(route_id: int):
-        """Get all stations belonging to a particular route."""
-
-        raw = Route.fetch_raw(route_id)
+            log.info('Already exists: route {} '.format(first_node['busRouteNm']))
 
         for station_info in raw['resultList']:
             try:
@@ -285,11 +286,20 @@ class Route(db.Model, CRUDMixin):
                 # `station_number` may be '미정차'
                 station_number = None
 
-            yield Station(id=station_info['station'],
-                          number=station_number,
-                          name=station_info['stationNm'],
-                          latitude=station_info['gpsY'],
-                          longitude=station_info['gpsX'])
+            try:
+                station = Station.create(
+                    id=station_info['station'],
+                    number=station_number,
+                    name=station_info['stationNm'],
+                    latitude=station_info['gpsY'],
+                    longitude=station_info['gpsX']
+                )
+                log.info('Stored station {}'.format(station.name))
+
+            except IntegrityError:
+                db.session.rollback()
+                log.info('Already exists: station {}'.format(station_info['stationNm']))
+
 
 @click.group()
 def cli():
@@ -305,26 +315,22 @@ def create_db():
 
 
 @cli.command()
-def fetch_route():
+@click.argument('route_id', type=int)
+def fetch_route(route_id):
     app = create_app(__name__)
     with app.app_context():
-        Route.store_route_info(4940300)
+        Route.store_route_info(route_id)
 
-        for station in Route.get_stations(4940300):
-            try:
-                station.save()
-            except IntegrityError:
-                db.session.rollback()
 
-@cli.command()
-def fetch_stations():
-    app = create_app(__name__)
-    with app.app_context():
-        for station in Route.get_stations(4940300):
-            try:
-                station.save()
-            except IntegrityError:
-                db.session.rollback()
+# @cli.command()
+# def fetch_stations():
+#     app = create_app(__name__)
+#     with app.app_context():
+#         for station in Route.get_stations(4940300):
+#             try:
+#                 station.save()
+#             except IntegrityError:
+#                 db.session.rollback()
 
 
 if __name__ == '__main__':

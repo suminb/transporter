@@ -4,3 +4,4 @@ flask-sqlalchemy
 geopy
 click
 psycopg2
+logbook
