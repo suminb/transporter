@@ -221,6 +221,16 @@ class Station(db.Model, CRUDMixin):
 
         return json.loads(resp.text)['resultList']
 
+    @staticmethod
+    def get_stations_in_bound(sw_latitude: float, sw_longitude: float, ne_latitude: float, ne_longitude: float):
+        # Pathological case:
+        # SW = (0, 350), NE = (10, 10)
+        return Station.query \
+            .filter(sw_latitude <= Station.latitude) \
+            .filter(Station.latitude <= ne_latitude) \
+            .filter(sw_longitude <= Station.longitude) \
+            .filter(Station.longitude <= ne_longitude)
+
 
 route_station_assoc = db.Table(
     'route_station_assoc',
@@ -376,15 +386,12 @@ def fetch_route(route_id):
         Route.store_route_info(route_id)
 
 
-# @cli.command()
-# def fetch_stations():
-#     app = create_app(__name__)
-#     with app.app_context():
-#         for station in Route.get_stations(4940300):
-#             try:
-#                 station.save()
-#             except IntegrityError:
-#                 db.session.rollback()
+@cli.command()
+def test():
+    app = create_app(__name__)
+    with app.app_context():
+        stations = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
+        print(stations)
 
 
 if __name__ == '__main__':
