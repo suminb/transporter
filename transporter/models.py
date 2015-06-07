@@ -4,7 +4,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
-from datetime import datetime
+from datetime import datetime, timedelta
 from logbook import Logger
 import click
 import requests
@@ -334,12 +334,17 @@ class Route(db.Model, CRUDMixin):
             if (prev_station is not None) and (prev_station_info is not None):
                 time1 = datetime.strptime(prev_station_info['beginTm'], '%H:%M')
                 time2 = datetime.strptime(station_info['beginTm'], '%H:%M')
+                time_diff = time2 - time1
+
+                if time_diff.total_seconds() < 0:
+                    # Temporary workaround
+                    time_diff = timedelta(seconds=59)
 
                 try:
                     edge = Edge.create(
                         start=prev_station.id,
                         end=station.id,
-                        average_time=(time2 - time1).seconds,
+                        average_time=time_diff.total_seconds(),
                     )
                     log.info('Stored edge from {} to {}'.format(prev_station, station))
                 except IntegrityError:
