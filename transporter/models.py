@@ -9,12 +9,13 @@ from logbook import Logger
 import click
 import requests
 import json
+import time
 
 
 db = SQLAlchemy()
 JsonType = db.String().with_variant(JSON(), 'postgresql')
 
-log = Logger()
+log = Logger(__name__)
 
 
 class CRUDMixin(object):
@@ -146,6 +147,8 @@ class Station(db.Model, CRUDMixin):
     latitude = db.Column(db.Float(precision=53))
     longitude = db.Column(db.Float(precision=53))
 
+    # edges = db.relationship('Edge', secondary=route_edge_assoc, backref='station', lazy='dynamic')
+
     def __init__(self, id: int, number: str, name: str, latitude: float, longitude: float):
         """
 
@@ -161,6 +164,9 @@ class Station(db.Model, CRUDMixin):
         self.name = name
         self.latitude = latitude
         self.longitude = longitude
+
+    def __repr__(self):
+        return u'<Station: {}>'.format(self.name)
 
     def fetch(self):
         from transporter.bus import STATION_URL
@@ -223,6 +229,12 @@ route_station_assoc = db.Table(
     db.Column('sequence', db.Integer),
 )
 
+route_edge_assoc = db.Table(
+    'route_edge_assoc',
+    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
+    db.Column('edge_id', db.Integer, db.ForeignKey('edge.id')),
+)
+
 # Many-to-many relationship between routes
 # route_route_assoc = db.Table(
 #     'route_station_assoc',
@@ -230,6 +242,14 @@ route_station_assoc = db.Table(
 #     db.Column('route_id2', db.Integer, db.ForeignKey('route.id')),
 #     db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
 # )
+
+
+class Edge(db.Model, CRUDMixin):
+
+    id = db.Column(db.Integer, primary_key=True)
+    start = db.Column(db.Integer, db.ForeignKey('station.id'))
+    end = db.Column(db.Integer, db.ForeignKey('station.id'))
+    average_time = db.Column(db.Integer)
 
 
 class Route(db.Model, CRUDMixin):
@@ -242,6 +262,8 @@ class Route(db.Model, CRUDMixin):
 
     #: Many-to-many relationship between route and station
     stations = db.relationship('Station', secondary=route_station_assoc, backref='route', lazy='dynamic')
+
+    edges = db.relationship('Edge', secondary=route_edge_assoc, backref='route', lazy='dynamic')
 
     raw = db.Column(JsonType)
 
@@ -280,6 +302,10 @@ class Route(db.Model, CRUDMixin):
             db.session.rollback()
             log.info('Already exists: route {} '.format(first_node['busRouteNm']))
 
+        station = None
+        prev_station = None
+        prev_station_info = None
+
         for station_info in raw['resultList']:
             try:
                 station_number = int(station_info['stationNo'])
@@ -289,6 +315,7 @@ class Route(db.Model, CRUDMixin):
 
             if station_number == 0:
                 log.warn('Rejecting station {} for having a station number of zero'.format(station_info['stationNm']))
+                continue
 
             try:
                 station = Station.create(
@@ -298,11 +325,29 @@ class Route(db.Model, CRUDMixin):
                     latitude=station_info['gpsY'],
                     longitude=station_info['gpsX']
                 )
-                log.info('Stored station {}'.format(station.name))
+                log.info('Stored station {}'.format(station))
 
             except IntegrityError:
                 db.session.rollback()
                 log.info('Already exists: station {}'.format(station_info['stationNm']))
+
+            if (prev_station is not None) and (prev_station_info is not None):
+                time1 = datetime.strptime(prev_station_info['beginTm'], '%H:%M')
+                time2 = datetime.strptime(station_info['beginTm'], '%H:%M')
+
+                try:
+                    edge = Edge.create(
+                        start=prev_station.id,
+                        end=station.id,
+                        average_time=(time2 - time1).seconds,
+                    )
+                    log.info('Stored edge from {} to {}'.format(prev_station, station))
+                except IntegrityError:
+                    db.session.rollback()
+                    log.info('Could not create an edge from {} to {}'.format(prev_station, station))
+
+            prev_station = station
+            prev_station_info = station_info
 
 
 @click.group()
