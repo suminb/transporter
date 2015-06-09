@@ -5,3 +5,5 @@ geopy
 click
 psycopg2
 logbook
+pytest
+pytest-cov

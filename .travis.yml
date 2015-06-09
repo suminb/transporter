@@ -1,0 +1,16 @@
+language: python
+
+python:
+- '3.4'
+
+install:
+- pip install -r requirements.txt --use-mirrors
+
+script:
+- export PYTHONPATH=$PYTHONPATH:.
+- py.test transporter/tests --cov transporter --durations=10
+
+after_success:
+- coveralls
+
+env:

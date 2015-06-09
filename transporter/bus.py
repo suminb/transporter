@@ -13,6 +13,7 @@ STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
 # curl 'http://m.bus.go.kr/mBus/bus/getRouteInfo.bms' -H 'Host: m.bus.go.kr' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/bus.bms?search=01224' -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=8rzUEsHINJK1ae1JcZH2XgAqv48TqoAujnXEU7u9NjiFoY236Jh43N6rMxj768za.bms-info1_servlet_engine32; mCookie=ARSID%3A01224%3A%uCC3D%uACBD%uAD81%3A%7CARSID%3A01224%3A%uCC3D%uACBD%uAD81%3A' -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'busRouteId=3015100'
 # curl 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms' -H 'Host: m.bus.go.kr' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbusNm.bms' -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=8rzUEsHINJK1ae1JcZH2XgAqv48TqoAujnXEU7u9NjiFoY236Jh43N6rMxj768za.bms-info1_servlet_engine32; mCookie=ARSID%3A01224%3A%uCC3D%uACBD%uAD81%3A%7CARSID%3A01224%3A%uCC3D%uACBD%uAD81%3A; c_latvalue=37.3887716; c_longvalue=127.1222976' -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'busRouteId=4940100'
 
+
 def auto_fetch(fetch_func, storage_var):
     def auto_fetch_inner(func):
         """A class method decorator that calls fetch() if self.cached_data is not available."""
@@ -21,7 +22,7 @@ def auto_fetch(fetch_func, storage_var):
             #     self.fetch()
 
             if getattr(self, storage_var) is None:
-                setattr(self, storage_var, fetch_func())
+                setattr(self, storage_var, fetch_func(self))
 
             return func(self, *args, **kwargs)
         return wrapper
@@ -94,7 +95,12 @@ class Bus(object):
         resp = requests.post(BUS_ROUTE_INFO_URL, data=dict(busRouteId=self.id))
         self.cached_data = json.loads(resp.text)
 
+        import warnings
+        warnings.warn('Consider refactoring the self.cached_data part')
+
         return self.cached_data
+
+        # return json.loads(resp.text)
 
     @auto_fetch(fetch, 'station_ids')
     def get_station_ids(self):
