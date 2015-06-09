@@ -8,6 +8,7 @@ from geopy.distance import vincenty
 from geopy.point import Point
 from datetime import datetime, timedelta
 from logbook import Logger
+from collections import deque
 import click
 import requests
 import json
@@ -151,20 +152,66 @@ class Map(object):
             )
 
         # Filter out non-existing graph nodes
-        for key, value in graph.items():
-            value['edges'] = filter(lambda x: x[0] in graph, value['edges'])
+        # for key, value in graph.items():
+        #     value['edges'] = filter(lambda x: x[0] in graph, value['edges'])
 
         return graph
 
     @staticmethod
     def calculate_distance_for_all_nodes(graph, starting_node_id: int):
-        graph[starting_node_id]['node'].cost = 0
+        queue = deque()
+        costs = {}
 
         for key, value in graph.items():
             node = value['node']
-            adjacent_nodes = [graph[e[0]]['node'] for e in value['edges']]
+            # edges = list(value['edges'])
 
-            print(key, node, adjacent_nodes)
+            if key != starting_node_id:
+                node.cost = inf
+                costs[key] = inf
+
+            queue.append(key)
+
+        # graph[starting_node_id]['node'].cost = 0
+        costs[starting_node_id] = 0
+
+        while len(queue) > 0:
+
+            min_cost_node_id = queue[0]
+            min_cost = costs[min_cost_node_id]
+            for key in queue:
+                if costs[key] < min_cost:
+                    min_cost = costs[key]
+                    min_cost_node_id = key
+
+            print(min_cost_node_id, min_cost, queue)
+
+            u = graph[min_cost_node_id]['node']
+            try:
+                queue.remove(min_cost_node_id)
+            except ValueError:
+                pass
+
+            # adjacent_nodes = [graph[e[0]]['node'] for e in u['edges']]
+            # adjacent_costs = [e[1] for e in u['edges']]
+
+            # print(adjacent_nodes)
+
+            # for v, c in zip(adjacent_nodes, adjacent_costs):
+            for v_key, c in graph[u.id]['edges']:
+                try:
+                    v = graph[v_key]['node']
+                except KeyError:
+                    continue
+
+                # if u.cost + c < v.cost:
+                #     v.cost = u.cost + c
+
+                if costs[u.id] + c < costs[v.id]:
+                    costs[v.id] = costs[u.id] + c
+                print(costs[u.id], c, costs[v.id])
+
+        print(costs)
 
 
 class Station(db.Model, CRUDMixin):
@@ -483,7 +530,7 @@ def test():
         #         print(station, station.edges)
 
         graph = Map.build_graph(stations)
-        Map.calculate_distance_for_all_nodes(graph, list(graph.keys())[0])
+        Map.calculate_distance_for_all_nodes(graph, 2559)
 
 
 @cli.command()
