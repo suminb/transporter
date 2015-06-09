@@ -1,6 +1,7 @@
 from transporter import create_app
 from transporter.bus import auto_fetch
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
@@ -17,6 +18,27 @@ db = SQLAlchemy()
 JsonType = db.String().with_variant(JSON(), 'postgresql')
 
 log = Logger(__name__)
+
+route_station_assoc = db.Table(
+    'route_station_assoc',
+    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
+    db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
+    db.Column('sequence', db.Integer),
+)
+
+route_edge_assoc = db.Table(
+    'route_edge_assoc',
+    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
+    db.Column('edge_id', db.Integer, db.ForeignKey('edge.id')),
+)
+
+# Many-to-many relationship between routes
+# route_route_assoc = db.Table(
+#     'route_station_assoc',
+#     db.Column('route_id1', db.Integer, db.ForeignKey('route.id')),
+#     db.Column('route_id2', db.Integer, db.ForeignKey('route.id')),
+#     db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
+# )
 
 
 class Bound(object):
@@ -104,6 +126,10 @@ class Map(object):
 
             yield station
 
+    @staticmethod
+    def build_graph(stations):
+        pass
+
 
 class Station(db.Model, CRUDMixin):
     """
@@ -185,8 +211,6 @@ class Station(db.Model, CRUDMixin):
     latitude = db.Column(db.Float(precision=53))
     longitude = db.Column(db.Float(precision=53))
 
-    # edges = db.relationship('Edge', secondary=route_edge_assoc, backref='station', lazy='dynamic')
-
     def __init__(self, id: int, number: str, name: str, latitude: float, longitude: float):
         """
 
@@ -205,6 +229,11 @@ class Station(db.Model, CRUDMixin):
 
     def __repr__(self):
         return u'<Station: {}>'.format(self.name)
+
+    @property
+    def edges(self):
+        """NOTE: This is a temporary solution."""
+        return Edge.query.filter(Edge.start == self.id).all()
 
     def fetch(self):
         from transporter.bus import STATION_URL
@@ -270,34 +299,15 @@ class Station(db.Model, CRUDMixin):
             .filter(Station.longitude <= ne_longitude)
 
 
-route_station_assoc = db.Table(
-    'route_station_assoc',
-    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
-    db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
-    db.Column('sequence', db.Integer),
-)
-
-route_edge_assoc = db.Table(
-    'route_edge_assoc',
-    db.Column('route_id', db.Integer, db.ForeignKey('route.id')),
-    db.Column('edge_id', db.Integer, db.ForeignKey('edge.id')),
-)
-
-# Many-to-many relationship between routes
-# route_route_assoc = db.Table(
-#     'route_station_assoc',
-#     db.Column('route_id1', db.Integer, db.ForeignKey('route.id')),
-#     db.Column('route_id2', db.Integer, db.ForeignKey('route.id')),
-#     db.Column('station_id', db.Integer, db.ForeignKey('station.id')),
-# )
-
-
 class Edge(db.Model, CRUDMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     start = db.Column(db.Integer, db.ForeignKey('station.id'))
     end = db.Column(db.Integer, db.ForeignKey('station.id'))
     average_time = db.Column(db.Integer)
+
+    def __repr__(self):
+        return u'<Edge {} -> {}>'.format(self.start, self.end)
 
 
 class Route(db.Model, CRUDMixin):
@@ -430,9 +440,11 @@ def test():
     with app.app_context():
         stations = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
 
-        for station in Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations):
-            if station.cost != float('inf'):
-                print(station, station.cost)
+        stations_in_boundary = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations)
+
+        for station in stations_in_boundary:
+            if station.cost == float('inf'):
+                print(station, station.edges)
 
 
 @cli.command()
