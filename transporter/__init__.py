@@ -13,7 +13,7 @@ def create_app(name=__name__, config={},
 
     app.config.update(config)
 
-    from main import main_module
+    from transporter.main import main_module
     app.register_blueprint(main_module, url_prefix='/')
 
     return app
