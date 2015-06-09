@@ -4,6 +4,7 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
+from geopy.point import Point
 from datetime import datetime, timedelta
 from logbook import Logger
 import click
@@ -16,6 +17,17 @@ db = SQLAlchemy()
 JsonType = db.String().with_variant(JSON(), 'postgresql')
 
 log = Logger(__name__)
+
+
+class Bound(object):
+    """Represents a geographical bound."""
+    def __init__(self, sw_latitude: float, sw_longitude: float, ne_latitude: float, ne_longitude: float):
+        self.sw = Point(latitude=sw_latitude, longitude=sw_longitude)
+        self.ne = Point(latitude=ne_latitude, longitude=ne_longitude)
+
+    def __contains__(self, item: Point):
+        return self.sw_latitude <= item.latitude <= self.ne_latitude and \
+            self.sw_longitude <= item.longitude <= self.ne_longitude
 
 
 class CRUDMixin(object):
@@ -65,6 +77,32 @@ class CRUDMixin(object):
     def delete(self, commit=True):
         db.session.delete(self)
         return commit and db.session.commit()
+
+
+class Map(object):
+    @staticmethod
+    def calculate_distance_for_all_vertices():
+        """
+        Phase 1:
+
+        """
+        pass
+
+    @staticmethod
+    def phase1(starting_point, radius: float, stations: list):
+        """Given a starting point, find all vertices (stations) within a rectangular bound. Initially, all vertices
+        have an infinite cost."""
+
+        for station in stations:
+            location = Point(latitude=station.latitude, longitude=station.longitude)
+            distance = vincenty(starting_point, location).m
+
+            if distance <= radius:
+                station.cost = distance
+            else:
+                station.cost = float('inf')
+
+            yield station
 
 
 class Station(db.Model, CRUDMixin):
@@ -391,8 +429,22 @@ def test():
     app = create_app(__name__)
     with app.app_context():
         stations = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
-        print(stations)
 
+        for station in Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations):
+            if station.cost != float('inf'):
+                print(station, station.cost)
+
+
+@cli.command()
+def fetch_all_routes():
+    app = create_app(__name__)
+    with app.app_context():
+        for route_id in range(3014600, 3015000, 100):
+            log.info('Fetching route {}...'.format(route_id))
+            try:
+                Route.store_route_info(route_id)
+            except:
+                time.sleep(10)
 
 if __name__ == '__main__':
     cli()
