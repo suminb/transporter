@@ -128,7 +128,12 @@ class Map(object):
 
     @staticmethod
     def build_graph(stations):
-        pass
+        graph = {}
+
+        for station in stations:
+            graph[station.id] = [e.end for e in station.edges]
+
+        return graph
 
 
 class Station(db.Model, CRUDMixin):
@@ -442,9 +447,12 @@ def test():
 
         stations_in_boundary = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations)
 
-        for station in stations_in_boundary:
-            if station.cost == float('inf'):
-                print(station, station.edges)
+        # for station in stations_in_boundary:
+        #     if station.cost == float('inf'):
+        #         print(station, station.edges)
+
+        graph = Map.build_graph(stations_in_boundary)
+        print(graph)
 
 
 @cli.command()
