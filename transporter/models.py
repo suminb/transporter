@@ -17,6 +17,7 @@ import time
 db = SQLAlchemy()
 JsonType = db.String().with_variant(JSON(), 'postgresql')
 
+inf = float('inf')
 log = Logger(__name__)
 
 route_station_assoc = db.Table(
@@ -50,6 +51,18 @@ class Bound(object):
     def __contains__(self, item: Point):
         return self.sw_latitude <= item.latitude <= self.ne_latitude and \
             self.sw_longitude <= item.longitude <= self.ne_longitude
+
+
+class GraphNode(object):
+    id = None
+    cost = None
+
+    def __init__(self, id, cost):
+        self.id = id
+        self.cost = cost
+
+    def __repr__(self):
+        return u'<GraphNode {} ({})>'.format(self.id, self.cost)
 
 
 class CRUDMixin(object):
@@ -122,18 +135,36 @@ class Map(object):
             if distance <= radius:
                 station.cost = distance
             else:
-                station.cost = float('inf')
+                station.cost = inf
 
             yield station
 
     @staticmethod
     def build_graph(stations):
+
         graph = {}
 
         for station in stations:
-            graph[station.id] = [e.end for e in station.edges]
+            graph[station.id] = dict(
+                node=GraphNode(station.id, inf),
+                edges=set([(e.end, e.average_time) for e in station.edges])
+            )
+
+        # Filter out non-existing graph nodes
+        for key, value in graph.items():
+            value['edges'] = filter(lambda x: x[0] in graph, value['edges'])
 
         return graph
+
+    @staticmethod
+    def calculate_distance_for_all_nodes(graph, starting_node_id: int):
+        graph[starting_node_id]['node'].cost = 0
+
+        for key, value in graph.items():
+            node = value['node']
+            adjacent_nodes = [graph[e[0]]['node'] for e in value['edges']]
+
+            print(key, node, adjacent_nodes)
 
 
 class Station(db.Model, CRUDMixin):
@@ -443,16 +474,16 @@ def fetch_route(route_id):
 def test():
     app = create_app(__name__)
     with app.app_context():
-        stations = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
+        stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
 
-        stations_in_boundary = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations)
+        stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)
 
         # for station in stations_in_boundary:
         #     if station.cost == float('inf'):
         #         print(station, station.edges)
 
-        graph = Map.build_graph(stations_in_boundary)
-        print(graph)
+        graph = Map.build_graph(stations)
+        Map.calculate_distance_for_all_nodes(graph, list(graph.keys())[0])
 
 
 @cli.command()
