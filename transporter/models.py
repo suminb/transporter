@@ -364,6 +364,18 @@ class Station(db.Model, CRUDMixin):
         return vincenty((latitude, longitude), (self.latitude, self.longitude)).m
 
     @staticmethod
+    def guess_time_diff(station_info1: dict, station_info2: dict):
+        time1 = datetime.strptime(station_info1['beginTm'], '%H:%M')
+        time2 = datetime.strptime(station_info2['beginTm'], '%H:%M')
+        time_diff = time2 - time1
+
+        if time_diff.total_seconds() < 0:
+            # Temporary workaround
+            time_diff = timedelta(seconds=150)
+
+        return time_diff.seconds
+
+    @staticmethod
     def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
         """
         Request Example:
@@ -438,6 +450,24 @@ class Route(db.Model, CRUDMixin):
 
     raw = db.Column(JsonType)
 
+    @property
+    def stations_with_aux_info(self):
+        buf = []
+        prev_station_info = None
+        for station_info in self.raw['resultList']:
+            if prev_station_info is not None:
+                time_diff = Station.guess_time_diff(prev_station_info, station_info)
+            else:
+                time_diff = 3600*24
+
+            buf.append(dict(station_id=station_info['station'],
+                            time=station_info['beginTm'],
+                            time_diff=time_diff))
+
+            prev_station_info = station_info
+
+        return buf
+
     @staticmethod
     def fetch_raw(route_id: int):
         """Fetch raw JSON data for a particular route."""
@@ -508,13 +538,7 @@ class Route(db.Model, CRUDMixin):
                 log.info('Already exists: station {}'.format(station_info['stationNm']))
 
             if (prev_station is not None) and (prev_station_info is not None):
-                time1 = datetime.strptime(prev_station_info['beginTm'], '%H:%M')
-                time2 = datetime.strptime(station_info['beginTm'], '%H:%M')
-                time_diff = time2 - time1
-
-                if time_diff.total_seconds() < 0:
-                    # Temporary workaround
-                    time_diff = timedelta(seconds=59)
+                time_diff = Station.guess_time_diff(prev_station_info, station_info)
 
                 try:
                     edge = Edge.create(
