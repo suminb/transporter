@@ -1,49 +1,30 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div id="map" style="top:0;left:0;width:100%;height:100%;position:absolute;"></div>
+<div id="map-canvas" style="top:0;left:0;width:1280px;height:720px;position:absolute;"></div>
 
-<script type="text/javascript" src="//apis.daum.net/maps/maps3.js?apikey=ded77085f21a1871bae6ebb2fb2997c9"></script>
+<script type="text/javascript"
+  src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
+</script>
 <script>
-    function getRandomColor() {
-        var letters = '0123456789ABCDEF'.split('');
-        var color = '#';
-        for (var i = 0; i < 6; i++ ) {
-            color += letters[Math.floor(Math.random() * 16)];
-        }
-        return color;
-    }
+/* Data points defined as an array of LatLng objects */
+var heatmapData = [
+  {location: new google.maps.LatLng(37.394874, 127.111239), weight: 1},
+  {location: new google.maps.LatLng(37.394874, 127.122239), weight: 1}
+];
 
-    var container = document.getElementById('map');
-    var options = {
-        center: new daum.maps.LatLng(37.394874, 127.111239),
-        level: 4,
-        scrollwheel: true,
-        disableDoubleClick: false
-    };
+var center = new google.maps.LatLng(37.394874, 127.111239);
 
-    var map = new daum.maps.Map(container, options);
+map = new google.maps.Map(document.getElementById('map-canvas'), {
+  center: center,
+  zoom: 13,
+  mapTypeId: google.maps.MapTypeId.MAP
+});
 
-    // Add a zoom control on the map
-    var zoomControl = new daum.maps.ZoomControl();
-    map.addControl(zoomControl, daum.maps.ControlPosition.RIGHT);
-
-    {% for station_locations in station_locations_of_buses %}
-
-        var stationLocations = {{ station_locations|list }};
-        var linePath = $.map(stationLocations, function(v, i) { return new daum.maps.LatLng(v[0], v[1]) });
-
-        // 지도에 표시할 선을 생성합니다
-        var polyline = new daum.maps.Polyline({
-            path: linePath, // 선을 구성하는 좌표배열 입니다
-            strokeWeight: 5, // 선의 두께 입니다
-            strokeColor: getRandomColor(),
-            strokeOpacity: 0.7, // 선의 불투명도 입니다 1에서 0 사이의 값이며 0에 가까울수록 투명합니다
-            strokeStyle: 'solid' // 선의 스타일입니다
-        });
-
-        // 지도에 선을 표시합니다
-        polyline.setMap(map);
-    {% endfor %}
-
+var heatmap = new google.maps.visualization.HeatmapLayer({
+  data: heatmapData,
+  radius: 128,
+  maxIntensity: 1
+});
+heatmap.setMap(map);
 </script>
 {% endblock %}
