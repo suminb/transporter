@@ -114,6 +114,28 @@ class CRUDMixin(object):
         db.session.delete(self)
         return commit and db.session.commit()
 
+    def serialize(self):
+        """
+        Serialize an instance as a dictionary
+        Copied from http://stackoverflow.com/questions/7102754/jsonify-a-sqlalchemy-result-set-in-flask
+        """
+        convert = dict()
+        # add your coversions for things like datetime's
+        # and what-not that aren't serializable.
+        d = dict()
+        for c in self.__table__.columns:
+            v = getattr(self, c.name)
+            if c.type in convert.keys() and v is not None:
+                try:
+                    d[c.name] = convert[c.type](v)
+                except:
+                    d[c.name] = "Error:  Failed to covert using ", str(convert[c.type])
+            elif v is None:
+                d[c.name] = str()
+            else:
+                d[c.name] = v
+        return d
+
 
 class Map(object):
     @staticmethod
