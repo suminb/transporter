@@ -114,10 +114,12 @@ class CRUDMixin(object):
         db.session.delete(self)
         return commit and db.session.commit()
 
-    def serialize(self):
+    def serialize(self, attributes=[]):
         """
         Serialize an instance as a dictionary
         Copied from http://stackoverflow.com/questions/7102754/jsonify-a-sqlalchemy-result-set-in-flask
+
+        :param attributes: Additional attributes to serialize
         """
         convert = dict()
         # add your coversions for things like datetime's
@@ -134,6 +136,10 @@ class CRUDMixin(object):
                 d[c.name] = str()
             else:
                 d[c.name] = v
+
+        for attr in attributes:
+            d[attr] = getattr(self, attr)
+
         return d
 
 
