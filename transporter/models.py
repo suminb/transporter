@@ -316,6 +316,8 @@ class Station(db.Model, CRUDMixin):
     latitude = db.Column(db.Float(precision=53))
     longitude = db.Column(db.Float(precision=53))
 
+    routes = db.relationship('Route', secondary=route_station_assoc, backref='station', lazy='dynamic')
+
     def __init__(self, id: int, number: str, name: str, latitude: float, longitude: float):
         """
 
@@ -452,6 +454,7 @@ class Route(db.Model, CRUDMixin):
 
         log.info('Fetching route info...')
 
+        route = None
         try:
             route = Route.create(
                 id=first_node['busRouteId'],
@@ -463,6 +466,7 @@ class Route(db.Model, CRUDMixin):
 
         except IntegrityError:
             db.session.rollback()
+            route = Route.get(route_id)
             log.info('Already exists: route {} '.format(first_node['busRouteNm']))
 
         station = None
@@ -486,8 +490,11 @@ class Route(db.Model, CRUDMixin):
                     number=station_number,
                     name=station_info['stationNm'],
                     latitude=station_info['gpsY'],
-                    longitude=station_info['gpsX']
+                    longitude=station_info['gpsX'],
+                    commit=False
                 )
+                station.routes.append(route)
+                db.session.commit()
                 log.info('Stored station {}'.format(station))
 
             except IntegrityError:
