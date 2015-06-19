@@ -1,5 +1,5 @@
 from flask import request, redirect
-from __init__ import create_app
+from transporter import create_app
 
 app = create_app(__name__)
 

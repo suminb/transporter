@@ -13,7 +13,12 @@ def create_app(name=__name__, config={},
 
     app.config.update(config)
 
+    from transporter.models import db
+    db.init_app(app)
+
     from transporter.main import main_module
+    from transporter.api import api_module
     app.register_blueprint(main_module, url_prefix='/')
+    app.register_blueprint(api_module, url_prefix='/api')
 
     return app

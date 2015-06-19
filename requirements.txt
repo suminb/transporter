@@ -1,4 +1,9 @@
 requests
 flask
+flask-sqlalchemy
+geopy
+click
+psycopg2
+logbook
 pytest
 pytest-cov

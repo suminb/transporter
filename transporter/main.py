@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
 from flask import request, render_template, redirect
-from transporter.bus import Bus, Station
+from transporter.bus import Bus
 
 main_module = Blueprint(
     'main', __name__, template_folder='templates/main')
@@ -19,3 +19,4 @@ def index():
     )
 
     return render_template('index.html', **context)
+
