@@ -114,7 +114,7 @@ class CRUDMixin(object):
         db.session.delete(self)
         return commit and db.session.commit()
 
-    def serialize(self, attributes=[]):
+    def serialize(self, attributes=[], excludes=[]):
         """
         Serialize an instance as a dictionary
         Copied from http://stackoverflow.com/questions/7102754/jsonify-a-sqlalchemy-result-set-in-flask
@@ -126,16 +126,17 @@ class CRUDMixin(object):
         # and what-not that aren't serializable.
         d = dict()
         for c in self.__table__.columns:
-            v = getattr(self, c.name)
-            if c.type in convert.keys() and v is not None:
-                try:
-                    d[c.name] = convert[c.type](v)
-                except:
-                    d[c.name] = "Error:  Failed to covert using ", str(convert[c.type])
-            elif v is None:
-                d[c.name] = str()
-            else:
-                d[c.name] = v
+            if c.name not in excludes:
+                v = getattr(self, c.name)
+                if c.type in convert.keys() and v is not None:
+                    try:
+                        d[c.name] = convert[c.type](v)
+                    except:
+                        d[c.name] = "Error:  Failed to covert using ", str(convert[c.type])
+                elif v is None:
+                    d[c.name] = str()
+                else:
+                    d[c.name] = v
 
         for attr in attributes:
             d[attr] = getattr(self, attr)
@@ -412,6 +413,11 @@ class Station(db.Model, CRUDMixin):
         resp = requests.post(url, data=data)
 
         return json.loads(resp.text)['resultList']
+
+    def calculate_distance_to_stations(self, stations: list):
+        """Calculate the distance from a particular station to each station in the list."""
+        for station in stations:
+            import pdb; pdb.set_trace()
 
     @staticmethod
     def get_stations_in_bound(sw_latitude: float, sw_longitude: float, ne_latitude: float, ne_longitude: float):

@@ -22,5 +22,5 @@ def route(route_id):
 
     route = Route.get_or_404(route_id)
 
-    return jsonify(route=route.serialize(['stations_with_aux_info']),
+    return jsonify(route=route.serialize(attributes=[], excludes=['raw']),
                    stations=[r.serialize() for r in route.stations])

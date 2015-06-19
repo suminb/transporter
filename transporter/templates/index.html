@@ -6,25 +6,34 @@
   src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
 </script>
 <script>
-/* Data points defined as an array of LatLng objects */
-var heatmapData = [
-  {location: new google.maps.LatLng(37.394874, 127.111239), weight: 1},
-  {location: new google.maps.LatLng(37.394874, 127.122239), weight: 1}
-];
 
-var center = new google.maps.LatLng(37.394874, 127.111239);
+function drawHeatmap(heatmapData) {
+    var heatmap = new google.maps.visualization.HeatmapLayer({
+      data: heatmapData,
+      radius: 64,
+      maxIntensity: 1
+    });
+    heatmap.setMap(map);
+}
 
-map = new google.maps.Map(document.getElementById('map-canvas'), {
-  center: center,
-  zoom: 13,
-  mapTypeId: google.maps.MapTypeId.MAP
+$(function() {
+    $.get('/api/route/4940100', function(response) {
+        var data = $.map(response.stations, function(v, i) {
+            return {location: new google.maps.LatLng(v.latitude, v.longitude), weight: 1};
+        });
+        drawHeatmap(data);
+    });
+
+    var center = new google.maps.LatLng(37.394874, 127.111239);
+
+    map = new google.maps.Map(document.getElementById('map-canvas'), {
+      center: center,
+      zoom: 13,
+      mapTypeId: google.maps.MapTypeId.MAP
+    });
 });
 
-var heatmap = new google.maps.visualization.HeatmapLayer({
-  data: heatmapData,
-  radius: 128,
-  maxIntensity: 1
-});
-heatmap.setMap(map);
+
+
 </script>
 {% endblock %}
