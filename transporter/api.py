@@ -25,4 +25,5 @@ def route(route_id):
     route = Route.get_or_404(route_id)
 
     return jsonify(route=route.serialize(attributes=[], excludes=['raw']),
-                   stations=[r.serialize() for r in route.stations])
+                   stations=[x.serialize() for x in route.stations],
+                   edges=[x.serialize() for x in route.edges])
