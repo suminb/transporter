@@ -1,8 +1,8 @@
 from transporter import create_app
 from transporter.bus import auto_fetch
+from transporter.utils import store_route_info
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
 from geopy.point import Point
@@ -364,18 +364,6 @@ class Station(db.Model, CRUDMixin):
         assert self.longitude is not None
         return vincenty((latitude, longitude), (self.latitude, self.longitude)).m
 
-    @staticmethod
-    def guess_time_diff(station_info1: dict, station_info2: dict):
-        time1 = datetime.strptime(station_info1['beginTm'], '%H:%M')
-        time2 = datetime.strptime(station_info2['beginTm'], '%H:%M')
-        time_diff = time2 - time1
-
-        if time_diff.total_seconds() < 0:
-            # Temporary workaround
-            time_diff = timedelta(seconds=150)
-
-        return time_diff.seconds
-
     def calculate_distance_to_stations(self, stations: list):
         """Calculate the distance from a particular station to each station in the list."""
         for station in stations:
@@ -418,114 +406,18 @@ class Route(db.Model, CRUDMixin):
 
     raw = db.Column(JsonType)
 
-    @property
-    def stations_with_aux_info(self):
-        buf = []
-        prev_station_info = None
-        for station_info in self.raw['resultList']:
-            if prev_station_info is not None:
-                time_diff = Station.guess_time_diff(prev_station_info, station_info)
-            else:
-                time_diff = 3600*24
-
-            buf.append(dict(station_id=station_info['station'],
-                            time=station_info['beginTm'],
-                            time_diff=time_diff))
-
-            prev_station_info = station_info
-
-        return buf
-
-    @staticmethod
-    def fetch_raw(route_id: int):
-        """Fetch raw JSON data for a particular route."""
-
-        url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
-        data = dict(busRouteId=route_id)
-
-        resp = requests.post(url, data=data)
-
-        return json.loads(resp.text)
-
-    @staticmethod
-    def store_route_info(route_id: int):
-
-        raw = Route.fetch_raw(route_id)
-
-        assert len(raw['resultList']) > 0
-
-        first_node = raw['resultList'][0]
-
-        log.info('Fetching route info...')
-
-        route = None
-        try:
-            route = Route.create(
-                id=first_node['busRouteId'],
-                number=first_node['busRouteNm'],
-                type=first_node['routeType'],
-                raw=raw,
-            )
-            log.info('Stored route {}'.format(route.number))
-
-        except IntegrityError:
-            db.session.rollback()
-            route = Route.get(route_id)
-            log.info('Already exists: route {} '.format(first_node['busRouteNm']))
-
-        station = None
-        prev_station = None
-        prev_station_info = None
-
-        for station_info in raw['resultList']:
-            try:
-                station_number = int(station_info['stationNo'])
-            except ValueError:
-                # `station_number` may be '미정차'
-                station_number = None
-
-            if station_number == 0:
-                log.warn('Rejecting station {} for having a station number of zero'.format(station_info['stationNm']))
-                continue
-
-            try:
-                station = Station.create(
-                    id=station_info['station'],
-                    number=station_number,
-                    name=station_info['stationNm'],
-                    latitude=station_info['gpsY'],
-                    longitude=station_info['gpsX'],
-                    commit=False
-                )
-                station.routes.append(route)
-                db.session.commit()
-                log.info('Stored station {}'.format(station))
-
-            except IntegrityError:
-                db.session.rollback()
-                log.info('Already exists: station {}'.format(station_info['stationNm']))
-
-            if (prev_station is not None) and (prev_station_info is not None):
-                time_diff = Station.guess_time_diff(prev_station_info, station_info)
-
-                try:
-                    edge = Edge.create(
-                        start=prev_station.id,
-                        end=station.id,
-                        average_time=time_diff.total_seconds(),
-                    )
-                    log.info('Stored edge from {} to {}'.format(prev_station, station))
-                except IntegrityError:
-                    db.session.rollback()
-                    log.info('Could not create an edge from {} to {}'.format(prev_station, station))
-
-            prev_station = station
-            prev_station_info = station_info
-
 
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+def gdb():
+    app = create_app(__name__)
+    with app.app_context():
+        import pdb; pdb.set_trace()
+        pass
 
 
 @cli.command()
@@ -541,7 +433,7 @@ def create_db():
 def fetch_route(route_id):
     app = create_app(__name__)
     with app.app_context():
-        Route.store_route_info(route_id)
+        store_route_info(route_id)
 
 
 @cli.command()
@@ -567,7 +459,7 @@ def fetch_all_routes():
         for route_id in range(3014600, 3015000, 100):
             log.info('Fetching route {}...'.format(route_id))
             try:
-                Route.store_route_info(route_id)
+                store_route_info(route_id)
             except:
                 time.sleep(10)
 
