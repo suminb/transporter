@@ -34,7 +34,7 @@ route_edge_assoc = db.Table(
     db.Column('edge_id', db.Integer, db.ForeignKey('edge.id')),
 )
 
-# Many-to-many relationship between routes
+# Many-to-many relationship between (transferable) routes
 # route_route_assoc = db.Table(
 #     'route_station_assoc',
 #     db.Column('route_id1', db.Integer, db.ForeignKey('route.id')),
@@ -55,6 +55,19 @@ class Bound(object):
 
 
 class GraphNode(object):
+    data = None
+    neighbors = None
+
+    def __init__(self, data):
+        self.data = data
+        self.neighbors = []
+
+    def add_neighbor(self, node):
+        if node not in self.neighbors:
+            self.neighbors.append(node)
+
+
+class GraphNode_(object):
     id = None
     cost = None
 
@@ -168,23 +181,6 @@ class Map(object):
                 station.cost = inf
 
             yield station
-
-    @staticmethod
-    def build_graph(stations):
-
-        graph = {}
-
-        for station in stations:
-            graph[station.id] = dict(
-                node=GraphNode(station.id, inf),
-                edges=set([(e.end, e.average_time) for e in station.edges])
-            )
-
-        # Filter out non-existing graph nodes
-        # for key, value in graph.items():
-        #     value['edges'] = filter(lambda x: x[0] in graph, value['edges'])
-
-        return graph
 
     @staticmethod
     def calculate_distance_for_all_nodes(graph, starting_node_id: int):

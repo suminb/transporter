@@ -6,6 +6,7 @@ import requests
 
 
 log = Logger(__name__)
+inf = float('inf')
 
 
 def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
@@ -166,3 +167,21 @@ def store_route_info(route_id: int):
 
         prev_station = station
         prev_station_info = station_info
+
+def build_graph(stations):
+
+    from transporter.models import GraphNode
+
+    graph = {}
+
+    for station in stations:
+        graph[station.id] = dict(
+            node=GraphNode(station.id, inf),
+            edges=set([(e.end, e.average_time) for e in station.edges])
+        )
+
+    # Filter out non-existing graph nodes
+    # for key, value in graph.items():
+    #     value['edges'] = filter(lambda x: x[0] in graph, value['edges'])
+
+    return graph
