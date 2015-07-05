@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from logbook import Logger
 from sqlalchemy.exc import IntegrityError
+from transporter import redis_store
 import json
 import requests
 
@@ -105,6 +106,25 @@ class RouteMapper(DictMapper):
         return target_dict
 
 
+def auto_fetch(url):
+    def wrap(func):
+        def wrapper(*args, **kwargs):
+            key = '{}_{}'.format(url, args)
+            data = redis_store.get(key)
+
+            if data is None:
+                log.info('Data entry for "{}" does not exist. Fetching one.'.format(key))
+                data = func(*args, **kwargs)
+                redis_store.set(key, json.dumps(data))
+            else:
+                log.info('Data entry for "{}" was loaded from cache.'.format(key))
+                data = json.loads(data.decode('utf-8'))
+
+            return data
+        return wrapper
+    return wrap
+
+
 def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
     """
     Request Example:
@@ -140,12 +160,17 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
 
     resp = requests.post(url, data=data)
 
-    rows = json.loads(resp.text)['resultList']
+    try:
+        rows = json.loads(resp.text)['resultList']
+    except ValueError:
+        return 'Could not load data', 500
+
     mapper = NearestStationsMapper()
 
     return [mapper.transform(r) for r in rows]
 
 
+@auto_fetch('http://m.bus.go.kr/mBus/bus/getStationByUid.bms')
 def get_routes_for_station(ars_id):
     STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
     resp = requests.post(STATION_URL, data=dict(arsId=ars_id))

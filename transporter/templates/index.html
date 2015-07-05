@@ -87,13 +87,6 @@ function test(coordinate) {
 }
 
 $(function() {
-    $.get('/api/route/4940100', function(response) {
-        var data = $.map(response.stations, function(v, i) {
-            return new google.maps.LatLng(v.latitude, v.longitude);
-        });
-        drawPaths(data);
-    });
-
     var center = new google.maps.LatLng(37.394874, 127.111239);
 
     map = new google.maps.Map(document.getElementById('map-canvas'), {
