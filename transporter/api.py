@@ -68,7 +68,7 @@ def calculate_costs(nodes):
 
 
 @api_module.route('/station/<int:ars_id>/routes')
-def station(ars_id):
+def routes_for_station(ars_id):
     return jsonify(routes=get_routes_for_station(ars_id))
 
 
@@ -79,8 +79,13 @@ def nearest_stations():
     longitude = request.args.get('longitude')
 
     stations = get_nearest_stations(latitude, longitude)
+    routes = [get_routes_for_station(s['ars_id']) for s in stations]
 
-    return jsonify(stations=stations)
+    entries = sum([r['entries'] for r in routes if len(r) > 0], [])
+    #import pdb; pdb.set_trace()
+    routes = [get_route(x['route_id']) for x in entries]
+
+    return jsonify(stations=stations, routes=routes)
 
 
 @api_module.route('/route/<int:route_id>')

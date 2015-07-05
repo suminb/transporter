@@ -60,12 +60,13 @@ class RoutesForStationMapper(DictMapper):
         target_dict = {}
 
         entries = source_dict['resultList']
-        first_entry = entries[0]
+        if entries is not None and len(entries) > 0:
+            first_entry = entries[0]
 
-        target_dict['latitude'] = first_entry['gpsY']
-        target_dict['longitude'] = first_entry['gpsX']
+            target_dict['latitude'] = first_entry['gpsY']
+            target_dict['longitude'] = first_entry['gpsX']
 
-        target_dict['entries'] = [self.transform_entry(e) for e in entries]
+            target_dict['entries'] = [self.transform_entry(e) for e in entries]
 
         return target_dict
 
@@ -91,6 +92,7 @@ class RouteMapper(DictMapper):
 
         mapper = (
             ('routeType', 'route_type', int),
+            ('busRouteNm', 'route_number', self.identity),
         )
 
         entries = source_dict['resultList']

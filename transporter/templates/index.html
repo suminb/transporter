@@ -7,35 +7,50 @@
 </script>
 <script>
 
-function getNearestStations(coordinate) {
+function getNearestStations(coordinate, callback) {
     var params = {
         latitude: coordinate.A,
         longitude: coordinate.F
     }
-    $.get('/api/nearest_stations', data=params, function(response) {
-        console.log(response);
-    });
+    $.get('/api/nearest_stations', data=params, callback);
+}
+
+function getRoutesForStation(arsId, callback) {
+    $.get('/api/station/' + arsId + '/routes', callback);
+}
+
+function getRoute(routeId, callback) {
+    $.get('/api/route/' + routeId, callback);
 }
 
 function drawHeatmap(heatmapData) {
     var heatmap = new google.maps.visualization.HeatmapLayer({
-      data: heatmapData,
-      radius: 64,
-      maxIntensity: 1
+        data: heatmapData,
+        radius: 64,
+        maxIntensity: 1
     });
     heatmap.setMap(map);
 }
 
 function drawPaths(pathData) {
-  var path = new google.maps.Polyline({
-      path: pathData,
-      geodesic: true,
-      strokeColor: '#FF0000',
-      strokeOpacity: 1.0,
-      strokeWeight: 3
-  });
+    var path = new google.maps.Polyline({
+        path: pathData,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+    });
 
-  path.setMap(map);
+    path.setMap(map);
+}
+
+function test(coordinate) {
+    getNearestStations(coordinate, function(response) {
+        console.log(response);
+        getRoutesForStation(response.ars_id, function(response) {
+            console.log(response);
+        });
+    });
 }
 
 $(function() {
@@ -56,7 +71,7 @@ $(function() {
 
     google.maps.event.addListener(map, 'rightclick', function(e) {
         var coordinate = e.latLng;
-        getNearestStations(e.latLng);
+        test(e.latLng);
     });
 });
 
