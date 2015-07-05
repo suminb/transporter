@@ -1,0 +1,10 @@
+requests
+flask
+flask-sqlalchemy
+flask-redis
+geopy
+click
+psycopg2
+logbook
+pytest
+pytest-cov

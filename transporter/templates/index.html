@@ -1,0 +1,133 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div id="map-canvas" style="top:0;left:0;width:100%;height:720px;position:absolute;"></div>
+
+<script type="text/javascript"
+  src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
+</script>
+<script type="text/javascript" src="/static/sprintf.js"></script>
+<script>
+
+// Copied from http://michalbe.blogspot.kr/2011/02/javascript-random-numbers-with-custom.html
+var CustomRandom = function(nseed) {
+    var seed,
+        constant = Math.pow(2, 13)+1,
+        prime = 37,
+        maximum = Math.pow(2, 50);
+
+    if (nseed) {
+        seed = nseed;
+    }
+
+    if (seed == null) {
+        // if there is no seed, use timestamp
+        seed = (new Date()).getTime();
+    }
+
+    return {
+        next : function() {
+            seed *= constant;
+            seed += prime;
+            seed %= maximum;
+
+            return seed;
+        }
+    }
+}
+
+function getNearestStations(coordinate, callback) {
+    var params = {
+        latitude: coordinate.A,
+        longitude: coordinate.F
+    }
+    $.get('/api/nearest_stations', data=params, callback);
+}
+
+function getRoutesForStation(arsId, callback) {
+    $.get('/api/station/' + arsId + '/routes', callback);
+}
+
+function getRoute(routeId, callback) {
+    $.get('/api/route/' + routeId, callback);
+}
+
+function drawHeatmap(heatmapData) {
+    var heatmap = new google.maps.visualization.HeatmapLayer({
+        data: heatmapData,
+        radius: 64,
+        maxIntensity: 1
+    });
+    heatmap.setMap(map);
+}
+
+function drawPaths(pathData, routeIndex) {
+    var random = CustomRandom(routeIndex);
+    var path = new google.maps.Polyline({
+        path: pathData,
+        geodesic: true,
+        strokeColor: sprintf('#%06x', (random.next() * 12345 + random.next()) % 0xFFFFFF),
+        strokeOpacity: .5,
+        strokeWeight: 2
+    });
+
+    path.setMap(map);
+}
+
+function drawRoutes(coordinate) {
+    getNearestStations(coordinate, function(response) {
+        // $.map(response.routes, function(v, i) {
+        //     return new google.maps.LatLng(v.latitude, v.longitude);
+        // });
+        $.each(response.stations, function(index, value) {
+            var circle = new google.maps.Circle({
+                strokeColor: '#0033FF',
+                strokeOpacity: 0.75,
+                strokeWeight: 1,
+                fillColor: '#0033FF',
+                fillOpacity: 0.35,
+                map: map,
+                center: new google.maps.LatLng(value.latitude, value.longitude),
+                radius: 10
+            });
+        });
+        $.each(response.routes, function(index, value) {
+            var data = $.map(value.entries, function(v, i) {
+                return new google.maps.LatLng(v.latitude, v.longitude);
+            });
+            drawPaths(data, index);
+        });
+    });
+}
+
+$(function() {
+    var center = new google.maps.LatLng(37.394874, 127.111239);
+
+    map = new google.maps.Map(document.getElementById('map-canvas'), {
+        center: center,
+        zoom: 13,
+        mapTypeId: google.maps.MapTypeId.MAP,
+        disableDoubleClickZoom: true
+    });
+
+    google.maps.event.addListener(map, 'rightclick', function(e) {
+        var coordinate = e.latLng;
+
+        var circle = new google.maps.Circle({
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.75,
+            strokeWeight: 1,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center: coordinate,
+            radius: 300
+        });
+
+        drawRoutes(e.latLng);
+    });
+});
+
+
+
+</script>
+{% endblock %}
