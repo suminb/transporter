@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath transporter __main__:app --log-file=-
+web: gunicorn --pythonpath transporter controllers:app --log-file=-
