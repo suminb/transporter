@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div id="map-canvas" style="top:0;left:0;width:1280px;height:720px;position:absolute;"></div>
+<div id="map-canvas" style="top:0;left:0;width:100%;height:720px;position:absolute;"></div>
 
 <script type="text/javascript"
   src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
@@ -78,6 +78,13 @@ function drawRoutes(coordinate) {
         // $.map(response.routes, function(v, i) {
         //     return new google.maps.LatLng(v.latitude, v.longitude);
         // });
+        $.each(response.stations, function(index, value) {
+          var marker = new google.maps.Marker({
+              position: new google.maps.LatLng(value.latitude, value.longitude),
+              map: map,
+              title: value.station_name
+          });
+        });
         $.each(response.routes, function(index, value) {
             var data = $.map(value.entries, function(v, i) {
                 return new google.maps.LatLng(v.latitude, v.longitude);
