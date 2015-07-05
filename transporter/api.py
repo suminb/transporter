@@ -3,13 +3,15 @@ from flask import request, render_template, redirect, jsonify
 from logbook import Logger
 from collections import deque
 from transporter.models import Route, Station, GraphNode
-from transporter.utils import get_nearby_stations, build_graph
+from transporter.utils import get_nearest_stations, build_graph, \
+                              get_routes_for_station, get_route
 
 api_module = Blueprint(
     'api', __name__, template_folder='templates/api')
 
 log = Logger(__name__)
 inf = float('inf')
+
 
 def build_nodes_for_route(route):
     """Build graph nodes for a route"""
@@ -65,14 +67,9 @@ def calculate_costs(nodes):
                 prev[v.data.id] = u
 
 
-@api_module.route('/station/<int:station_id>/routes')
-def station_routes(station_id):
-    """Request all routes that go through a given station."""
-
-    station = Station.get_or_404(station_id)
-
-    return jsonify(station=station.serialize(),
-                   routes=[r.serialize(excludes=['raw']) for r in station.routes])
+@api_module.route('/station/<int:ars_id>/routes')
+def routes_for_station(ars_id):
+    return jsonify(routes=get_routes_for_station(ars_id))
 
 
 @api_module.route('/nearest_stations')
@@ -81,18 +78,18 @@ def nearest_stations():
     latitude = request.args.get('latitude')
     longitude = request.args.get('longitude')
 
-    stations = get_nearby_stations(latitude, longitude)
+    stations = get_nearest_stations(latitude, longitude)
+    routes = [get_routes_for_station(s['ars_id']) for s in stations]
 
-    return jsonify(stations=stations)
+    entries = sum([r['entries'] for r in routes if len(r) > 0], [])
+    #import pdb; pdb.set_trace()
+    routes = [get_route(x['route_id']) for x in entries]
+
+    return jsonify(stations=stations, routes=routes)
 
 
 @api_module.route('/route/<int:route_id>')
 def route(route_id):
 
-    route = Route.get_or_404(route_id)
-
-    nodes = build_nodes_for_route(route)
-
-    return jsonify(route=route.serialize(attributes=[], excludes=['raw']),
-                   stations=[x.serialize() for x in route.stations],
-                   edges=[x.serialize() for x in route.edges])
+    route = get_route(route_id)
+    return jsonify(route)

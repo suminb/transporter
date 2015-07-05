@@ -1,5 +1,4 @@
 from transporter import create_app
-from transporter.bus import auto_fetch
 from transporter.utils import store_route_info
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship

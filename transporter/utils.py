@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from logbook import Logger
 from sqlalchemy.exc import IntegrityError
+from transporter import redis_store
 import json
 import requests
 
@@ -9,7 +10,122 @@ log = Logger(__name__)
 inf = float('inf')
 
 
-def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
+class DictMapper(object):
+    """A dictionary mapper that transforms a map to another."""
+
+    def identity(self, value):
+        return value
+
+    def transform(self, source_dict: dict, mapper: list=None):
+        target_dict = {}
+
+        if mapper is None:
+            mapper = self.mapper
+
+        for source_key, target_key, func in mapper:
+            target_dict[target_key] = func(source_dict[source_key])
+
+        return target_dict
+
+
+class NearestStationsMapper(DictMapper):
+
+    def __init__(self):
+        self.mapper = (
+            # (source key), (target_key), (func)
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+            ('arsId', 'ars_id', int),
+            ('stationNm', 'station_name', self.identity),
+            ('dist', 'distance_from_current_location', int),
+        )
+
+
+class RoutesForStationMapper(DictMapper):
+
+    def __init__(self):
+        self.mapper = (
+            ('busRouteId', 'route_id', int),
+            ('rtNm', 'route_number', self.identity),
+        )
+
+    def transform_entry(self, source_dict: dict):
+        target_dict = {}
+
+        for source_key, target_key, func in self.mapper:
+            target_dict[target_key] = func(source_dict[source_key])
+
+        return target_dict
+
+    def transform(self, source_dict: dict):
+        target_dict = {}
+
+        entries = source_dict['resultList']
+        if entries is not None and len(entries) > 0:
+            first_entry = entries[0]
+
+            target_dict['latitude'] = first_entry['gpsY']
+            target_dict['longitude'] = first_entry['gpsX']
+
+            target_dict['entries'] = [self.transform_entry(e) for e in entries]
+
+        return target_dict
+
+
+class RouteMapper(DictMapper):
+
+    def map_ars_id(self, ars_id: str):
+        try:
+            return int(ars_id)
+        except ValueError:
+            return None
+
+    def transform_entry(self, source_dict: dict):
+        mapper = (
+            ('arsId', 'ars_id', self.map_ars_id),
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+        )
+        return super(RouteMapper, self).transform(source_dict, mapper)
+
+    def transform(self, source_dict: dict):
+        target_dict = {}
+
+        mapper = (
+            ('routeType', 'route_type', int),
+            ('busRouteNm', 'route_number', self.identity),
+        )
+
+        entries = source_dict['resultList']
+        first_entry = entries[0]
+
+        target_dict = super(RouteMapper, self).transform(first_entry, mapper)
+
+        target_dict['entries'] = [self.transform_entry(e) for e in entries]
+
+        return target_dict
+
+
+def auto_fetch(url):
+    def wrap(func):
+        def wrapper(*args, **kwargs):
+            key = '{}_{}'.format(url, args)
+            data = redis_store.get(key)
+
+            if data is None:
+                log.info('Data entry for "{}" does not exist. Fetching one.'.format(key))
+                data = func(*args, **kwargs)
+                redis_store.set(key, json.dumps(data))
+            else:
+                log.info('Data entry for "{}" was loaded from cache.'.format(key))
+                data = json.loads(data.decode('utf-8'))
+
+            return data
+        return wrapper
+    return wrap
+
+
+def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
     """
     Request Example:
 
@@ -44,7 +160,32 @@ def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
 
     resp = requests.post(url, data=data)
 
-    return json.loads(resp.text)['resultList']
+    try:
+        rows = json.loads(resp.text)['resultList']
+    except ValueError:
+        return 'Could not load data', 500
+
+    mapper = NearestStationsMapper()
+
+    return [mapper.transform(r) for r in rows]
+
+
+@auto_fetch('http://m.bus.go.kr/mBus/bus/getStationByUid.bms')
+def get_routes_for_station(ars_id):
+    STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
+    resp = requests.post(STATION_URL, data=dict(arsId=ars_id))
+    mapper = RoutesForStationMapper()
+
+    return mapper.transform(json.loads(resp.text))
+
+
+def get_route(route_id):
+    ROUTE_INFO_URL = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
+    resp = requests.post(ROUTE_INFO_URL, data=dict(busRouteId=route_id))
+
+    mapper = RouteMapper()
+
+    return mapper.transform(json.loads(resp.text))
 
 
 def guess_time_diff(station_info1: dict, station_info2: dict):

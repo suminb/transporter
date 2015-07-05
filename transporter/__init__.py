@@ -1,5 +1,8 @@
 from flask import Flask
+from flask.ext.redis import FlaskRedis
 import os
+
+redis_store = FlaskRedis()
 
 
 def create_app(name=__name__, config={},
@@ -9,9 +12,12 @@ def create_app(name=__name__, config={},
     app = Flask(name, static_folder=static_folder, template_folder=template_folder)
     app.secret_key = 'secret'
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI')
+    app.config['REDIS_URL'] = os.environ.get('REDIS_URL')
     app.config['DEBUG'] = True
 
     app.config.update(config)
+
+    redis_store.init_app(app)
 
     from transporter.models import db
     db.init_app(app)

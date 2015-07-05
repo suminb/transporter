@@ -1,6 +1,7 @@
 requests
 flask
 flask-sqlalchemy
+flask-redis
 geopy
 click
 psycopg2
