@@ -39,15 +39,34 @@ class NearestStationsMapper(DictMapper):
         )
 
 
-class StationMapper(DictMapper):
+class RoutesForStationMapper(DictMapper):
 
     def __init__(self):
         self.mapper = (
             ('busRouteId', 'route_id', int),
-            ('rtNm', 'route_number', int),
-            ('gpsY', 'latitude', float),
-            ('gpsX', 'longitude', float),
+            ('rtNm', 'route_number', str),
         )
+
+    def transform_entry(self, source_dict: dict):
+        target_dict = {}
+
+        for source_key, target_key, func in self.mapper:
+            target_dict[target_key] = func(source_dict[source_key])
+
+        return target_dict
+
+    def transform(self, source_dict: dict):
+        target_dict = {}
+
+        entries = source_dict['resultList']
+        first_entry = entries[0]
+
+        target_dict['latitude'] = first_entry['gpsY']
+        target_dict['longitude'] = first_entry['gpsX']
+
+        target_dict['entries'] = [self.transform_entry(e) for e in entries]
+
+        return target_dict
 
 
 class RouteMapper(DictMapper):
@@ -100,14 +119,12 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
     return [mapper.transform(r) for r in rows]
 
 
-def get_station(ars_id):
+def get_routes_for_station(ars_id):
     STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
     resp = requests.post(STATION_URL, data=dict(arsId=ars_id))
+    mapper = RoutesForStationMapper()
 
-    rows = json.loads(resp.text)['resultList']
-    mapper = StationMapper()
-
-    return [mapper.transform(r) for r in rows]
+    return mapper.transform(json.loads(resp.text))
 
 
 def get_route(route_id):

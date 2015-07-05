@@ -41,55 +41,10 @@ def test_nearest_stations_mapper():
     assert isinstance(target_dict['distance_from_current_location'], int)
 
 
-def test_station_mapper():
-    from transporter.utils import StationMapper
+def __test_routes_for_station_mapper():
+    from transporter.utils import RoutesForStationMapper
 
-    source_dict = {
-        "adirection": "\uc11c\uc6b8\uc5ed",
-        "arrmsg1": "\uc6b4\ud589\uc885\ub8cc",
-        "arrmsg2": "\uc6b4\ud589\uc885\ub8cc",
-        "arsId": "47105",
-        "busRouteId": "4940100",
-        "busType1": "0",
-        "busType2": "0",
-        "firstTm": "04:30 ",
-        "gpsX": "127.12427817794831",
-        "gpsY": "37.38864576988937",
-        "isArrive1": "0",
-        "isArrive2": "0",
-        "isFullFlag1": "0",
-        "isFullFlag2": "0",
-        "isLast1": "-2",
-        "isLast2": "-2",
-        "lastTm": "23:00 ",
-        "nextBus": " ",
-        "plainNo1": "\uc11c\uc6b875\uc0ac1094",
-        "plainNo2": "\uc11c\uc6b875\uc0ac1094",
-        "posX": "211004.5",
-        "posY": "432159.5",
-        "rerdieDiv1": "1",
-        "rerdieDiv2": "1",
-        "rerideNum1": "20",
-        "rerideNum2": "5",
-        "routeType": "6",
-        "rtNm": "9401",
-        "sectNm": "\uc0c8\ub9c8\uc744\uc5f0\uc218\uc6d0\uc785\uad6c~\uc774\ub9e4\ucd0c\ud55c\uc2e0.\uc11c\ud604\uc5ed.AK",
-        "sectOrd1": "0",
-        "sectOrd2": "0",
-        "stId": "6848",
-        "stNm": "\uc774\ub9e4\ucd0c\ud55c\uc2e0.\uc11c\ud604\uc5ed.AK\ud504\ub77c\uc790",
-        "staOrd": "20",
-        "stationNm1": "\uc0c8\ub9c8\uc744\uc5f0\uc218\uc6d0\uc785\uad6c",
-        "stationNm2": "\uc911\uc559\uacf5\uc6d0.\uc0db\ubcc4\ub9c8\uc744.\ub77c\uc774\ud504\uc544\ud30c\ud2b8",
-        "stationTp": "0",
-        "term": "4",
-        "traSpd1": "0",
-        "traSpd2": "28",
-        "traTime1": "5",
-        "traTime2": "283",
-        "vehId1": "0",
-        "vehId2": "0"
-    }
+    # source = ...
 
     mapper = StationMapper()
     target_dict = mapper.transform(source_dict)
