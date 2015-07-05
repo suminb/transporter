@@ -52,7 +52,7 @@ def __test_routes_for_station_mapper():
     assert 'route_id' in target_dict
 
 
-def test_route_mapper():
+def __test_route_mapper():
     from transporter.utils import RouteMapper
 
     source_dict = {

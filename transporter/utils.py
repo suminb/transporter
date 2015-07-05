@@ -12,15 +12,16 @@ inf = float('inf')
 class DictMapper(object):
     """A dictionary mapper that transforms a map to another."""
 
-    source_dict = None
-    target_dict = None
-
     def identity(self, value):
         return value
 
-    def transform(self, source_dict: dict):
+    def transform(self, source_dict: dict, mapper: list=None):
         target_dict = {}
-        for source_key, target_key, func in self.mapper:
+
+        if mapper is None:
+            mapper = self.mapper
+
+        for source_key, target_key, func in mapper:
             target_dict[target_key] = func(source_dict[source_key])
 
         return target_dict
@@ -44,7 +45,7 @@ class RoutesForStationMapper(DictMapper):
     def __init__(self):
         self.mapper = (
             ('busRouteId', 'route_id', int),
-            ('rtNm', 'route_number', str),
+            ('rtNm', 'route_number', self.identity),
         )
 
     def transform_entry(self, source_dict: dict):
@@ -71,11 +72,35 @@ class RoutesForStationMapper(DictMapper):
 
 class RouteMapper(DictMapper):
 
-    def __init__(self):
-        self.mapper = (
+    def map_ars_id(self, ars_id: str):
+        try:
+            return int(ars_id)
+        except ValueError:
+            return None
+
+    def transform_entry(self, source_dict: dict):
+        mapper = (
+            ('arsId', 'ars_id', self.map_ars_id),
             ('gpsY', 'latitude', float),
             ('gpsX', 'longitude', float),
         )
+        return super(RouteMapper, self).transform(source_dict, mapper)
+
+    def transform(self, source_dict: dict):
+        target_dict = {}
+
+        mapper = (
+            ('routeType', 'route_type', int),
+        )
+
+        entries = source_dict['resultList']
+        first_entry = entries[0]
+
+        target_dict = super(RouteMapper, self).transform(first_entry, mapper)
+
+        target_dict['entries'] = [self.transform_entry(e) for e in entries]
+
+        return target_dict
 
 
 def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
@@ -131,10 +156,9 @@ def get_route(route_id):
     ROUTE_INFO_URL = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
     resp = requests.post(ROUTE_INFO_URL, data=dict(busRouteId=route_id))
 
-    rows = json.loads(resp.text)['resultList']
     mapper = RouteMapper()
 
-    return [mapper.transform(r) for r in rows]
+    return mapper.transform(json.loads(resp.text))
 
 
 def guess_time_diff(station_info1: dict, station_info2: dict):

@@ -67,19 +67,10 @@ def calculate_costs(nodes):
                 prev[v.data.id] = u
 
 
-# @api_module.route('/station/<int:station_id>/routes')
-# def station_routes(station_id):
-#     """Request all routes that go through a given station."""
-#
-#     station = Station.get_or_404(station_id)
-#
-#     return jsonify(station=station.serialize(),
-#                    routes=[r.serialize(excludes=['raw']) for r in station.routes])
-
-
 @api_module.route('/station/<int:ars_id>/routes')
 def station(ars_id):
     return jsonify(routes=get_routes_for_station(ars_id))
+
 
 @api_module.route('/nearest_stations')
 def nearest_stations():
@@ -95,10 +86,5 @@ def nearest_stations():
 @api_module.route('/route/<int:route_id>')
 def route(route_id):
 
-    route = Route.get_or_404(route_id)
-
-    nodes = build_nodes_for_route(route)
-
-    return jsonify(route=route.serialize(attributes=[], excludes=['raw']),
-                   stations=[x.serialize() for x in route.stations],
-                   edges=[x.serialize() for x in route.edges])
+    route = get_route(route_id)
+    return jsonify(route)
