@@ -47,9 +47,7 @@ function drawPaths(pathData) {
 function test(coordinate) {
     getNearestStations(coordinate, function(response) {
         console.log(response);
-        getRoutesForStation(response.ars_id, function(response) {
-            console.log(response);
-        });
+
     });
 }
 
