@@ -2,6 +2,7 @@ from flask import Flask
 from flask.ext.redis import FlaskRedis
 import os
 
+__version__ = '0.8.0'
 redis_store = FlaskRedis()
 
 
