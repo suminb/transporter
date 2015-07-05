@@ -7,6 +7,16 @@
 </script>
 <script>
 
+function getNearestStations(coordinate) {
+    var params = {
+        latitude: coordinate.A,
+        longitude: coordinate.F
+    }
+    $.get('/api/nearest_stations', data=params, function(response) {
+        console.log(response);
+    });
+}
+
 function drawHeatmap(heatmapData) {
     var heatmap = new google.maps.visualization.HeatmapLayer({
       data: heatmapData,
@@ -42,6 +52,11 @@ $(function() {
         center: center,
         zoom: 13,
         mapTypeId: google.maps.MapTypeId.MAP
+    });
+
+    google.maps.event.addListener(map, 'rightclick', function(e) {
+        var coordinate = e.latLng;
+        getNearestStations(e.latLng);
     });
 });
 

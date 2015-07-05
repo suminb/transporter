@@ -9,6 +9,39 @@ log = Logger(__name__)
 inf = float('inf')
 
 
+class DictMapper(object):
+    """A dictionary mapper that transforms a map to another."""
+
+    source_dict = None
+    target_dict = None
+
+    def identity(self, value):
+        return value
+
+    def transform(self):
+        raise NotImplementedError()
+
+class NearestStationsMapper(DictMapper):
+
+    def __init__(self):
+        self.mapper = (
+            # (source key), (target_key), (func)
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+            ('stationId', 'station_id', int),
+            ('stationNm', 'station_name', self.identity),
+            ('dist', 'distance_from_current_location', int),
+        )
+
+    def transform(self, source_dict: dict):
+        target_dict = {}
+        for source_key, target_key, func in self.mapper:
+            target_dict[target_key] = func(source_dict[source_key])
+
+        return target_dict
+
+
+
 def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
     """
     Request Example:
