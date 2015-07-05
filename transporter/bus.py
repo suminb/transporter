@@ -29,10 +29,6 @@ def auto_fetch(fetch_func, storage_var):
     return auto_fetch_inner
 
 
-class Map(object):
-    pass
-
-
 class Bus(object):
 
     station_ids = None

@@ -3,13 +3,14 @@ from flask import request, render_template, redirect, jsonify
 from logbook import Logger
 from collections import deque
 from transporter.models import Route, Station, GraphNode
-from transporter.utils import get_nearby_stations, build_graph
+from transporter.utils import get_nearest_stations, build_graph
 
 api_module = Blueprint(
     'api', __name__, template_folder='templates/api')
 
 log = Logger(__name__)
 inf = float('inf')
+
 
 def build_nodes_for_route(route):
     """Build graph nodes for a route"""
@@ -81,7 +82,7 @@ def nearest_stations():
     latitude = request.args.get('latitude')
     longitude = request.args.get('longitude')
 
-    stations = get_nearby_stations(latitude, longitude)
+    stations = get_nearest_stations(latitude, longitude)
 
     return jsonify(stations=stations)
 

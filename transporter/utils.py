@@ -18,21 +18,6 @@ class DictMapper(object):
     def identity(self, value):
         return value
 
-    def transform(self):
-        raise NotImplementedError()
-
-class NearestStationsMapper(DictMapper):
-
-    def __init__(self):
-        self.mapper = (
-            # (source key), (target_key), (func)
-            ('gpsY', 'latitude', float),
-            ('gpsX', 'longitude', float),
-            ('stationId', 'station_id', int),
-            ('stationNm', 'station_name', self.identity),
-            ('dist', 'distance_from_current_location', int),
-        )
-
     def transform(self, source_dict: dict):
         target_dict = {}
         for source_key, target_key, func in self.mapper:
@@ -41,8 +26,40 @@ class NearestStationsMapper(DictMapper):
         return target_dict
 
 
+class NearestStationsMapper(DictMapper):
 
-def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
+    def __init__(self):
+        self.mapper = (
+            # (source key), (target_key), (func)
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+            ('arsId', 'ars_id', int),
+            ('stationNm', 'station_name', self.identity),
+            ('dist', 'distance_from_current_location', int),
+        )
+
+
+class StationMapper(DictMapper):
+
+    def __init__(self):
+        self.mapper = (
+            ('busRouteId', 'route_id', int),
+            ('rtNm', 'route_number', int),
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+        )
+
+
+class RouteMapper(DictMapper):
+
+    def __init__(self):
+        self.mapper = (
+            ('gpsY', 'latitude', float),
+            ('gpsX', 'longitude', float),
+        )
+
+
+def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
     """
     Request Example:
 
@@ -77,7 +94,30 @@ def get_nearby_stations(latitude: float, longitude: float, radius: int=500):
 
     resp = requests.post(url, data=data)
 
-    return json.loads(resp.text)['resultList']
+    rows = json.loads(resp.text)['resultList']
+    mapper = NearestStationsMapper()
+
+    return [mapper.transform(r) for r in rows]
+
+
+def get_station(ars_id):
+    STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
+    resp = requests.post(STATION_URL, data=dict(arsId=ars_id))
+
+    rows = json.loads(resp.text)['resultList']
+    mapper = StationMapper()
+
+    return [mapper.transform(r) for r in rows]
+
+
+def get_route(route_id):
+    ROUTE_INFO_URL = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
+    resp = requests.post(ROUTE_INFO_URL, data=dict(busRouteId=route_id))
+
+    rows = json.loads(resp.text)['resultList']
+    mapper = RouteMapper()
+
+    return [mapper.transform(r) for r in rows]
 
 
 def guess_time_diff(station_info1: dict, station_info2: dict):
