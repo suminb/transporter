@@ -1,4 +1,8 @@
 from . import app
+import os
+import json
+
+TEST_FILE_BASE_PATH = 'transporter/tests'
 
 
 def __test_pages(app):
@@ -41,46 +45,27 @@ def test_nearest_stations_mapper():
     assert isinstance(target_dict['distance_from_current_location'], int)
 
 
-def __test_routes_for_station_mapper():
+def test_routes_for_station_mapper():
     from transporter.utils import RoutesForStationMapper
 
-    # source = ...
+    path = os.path.join(TEST_FILE_BASE_PATH, 'get_station_by_uid.json')
+    with open(path) as fin:
+        source_dict = json.loads(fin.read())
+        mapper = RoutesForStationMapper()
+        target_dict = mapper.transform(source_dict)
 
-    mapper = StationMapper()
-    target_dict = mapper.transform(source_dict)
+        assert 'latitude' in target_dict
+        assert 'longitude' in target_dict
+        assert 'entries' in target_dict
 
-    assert 'route_id' in target_dict
 
-
-def __test_route_mapper():
+def test_route_mapper():
     from transporter.utils import RouteMapper
 
-    source_dict = {
-        "arsId": "47171",
-        "beginTm": "04:30",
-        "busRouteId": "4940100",
-        "busRouteNm": "9401",
-        "busType": "N",
-        "direction": "\uc11c\uc6b8\uc5ed",
-        "existYn": "N",
-        "fullSectDist": "0",
-        "gpsX": "127.10610729246586",
-        "gpsY": "37.34227547211239",
-        "lastTm": "23:00",
-        "routeType": "6",
-        "sectSpd": "0",
-        "sectSpdCol": "SpeedRed",
-        "section": "0",
-        "seq": "1",
-        "station": "35680",
-        "stationNm": "\uad6c\ubbf8\ub3d9\ucc28\uace0\uc9c0\uc55e",
-        "stationNo": "47171",
-        "transYn": "N",
-        "trnstnid": "36839"
-    }
+    path = os.path.join(TEST_FILE_BASE_PATH, 'get_route_and_pos.json')
+    with open(path) as fin:
+        source_dict = json.loads(fin.read())
+        mapper = RouteMapper()
+        target_dict = mapper.transform(source_dict)
 
-    mapper = RouteMapper()
-    target_dict = mapper.transform(source_dict)
-
-    assert 'latitude' in target_dict
-    assert 'longitude' in target_dict
+        assert 'route_type' in target_dict
