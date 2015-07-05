@@ -125,7 +125,7 @@ def auto_fetch(url):
     return wrap
 
 
-def get_nearest_stations(latitude: float, longitude: float, radius: int=500):
+def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
     """
     Request Example:
 

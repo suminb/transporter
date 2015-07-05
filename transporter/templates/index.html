@@ -79,11 +79,16 @@ function drawRoutes(coordinate) {
         //     return new google.maps.LatLng(v.latitude, v.longitude);
         // });
         $.each(response.stations, function(index, value) {
-          var marker = new google.maps.Marker({
-              position: new google.maps.LatLng(value.latitude, value.longitude),
-              map: map,
-              title: value.station_name
-          });
+            var circle = new google.maps.Circle({
+                strokeColor: '#0033FF',
+                strokeOpacity: 0.75,
+                strokeWeight: 1,
+                fillColor: '#0033FF',
+                fillOpacity: 0.35,
+                map: map,
+                center: new google.maps.LatLng(value.latitude, value.longitude),
+                radius: 10
+            });
         });
         $.each(response.routes, function(index, value) {
             var data = $.map(value.entries, function(v, i) {
@@ -106,6 +111,18 @@ $(function() {
 
     google.maps.event.addListener(map, 'rightclick', function(e) {
         var coordinate = e.latLng;
+
+        var circle = new google.maps.Circle({
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.75,
+            strokeWeight: 1,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center: coordinate,
+            radius: 300
+        });
+
         drawRoutes(e.latLng);
     });
 });
