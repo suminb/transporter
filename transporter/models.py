@@ -56,15 +56,20 @@ class Bound(object):
 
 class GraphNode(object):
     data = None
-    neighbors = None
+    neighbor_cost_pairs = None
 
     def __init__(self, data):
         self.data = data
-        self.neighbors = []
+        self.neighbor_cost_pairs = []
 
     def add_neighbor(self, node):
         if node not in self.neighbors:
             self.neighbors.append(node)
+
+    @property
+    def neighbors(self):
+        zipped = list(zip(*self.neighbor_cost_pairs))
+        return zipped[0] if len(zipped) > 0 else []
 
 
 class GraphNode_(object):
@@ -350,11 +355,6 @@ class Station(db.Model, CRUDMixin):
         resp = requests.post(STATION_URL, data=dict(arsId=self.id))
         return json.loads(resp.text)
 
-    @auto_fetch(fetch, 'bus_route_ids')
-    def get_bus_route_ids(self):
-        for bus_info in self.cached_data['resultList']:
-            yield bus_info['busRouteId']
-
     def get_distance_to(self, latitude, longitude):
         assert self.latitude is not None
         assert self.longitude is not None
@@ -377,6 +377,7 @@ class Station(db.Model, CRUDMixin):
 
 
 class Edge(db.Model, CRUDMixin):
+    """Connects two nodes (stations)."""
 
     id = db.Column(db.Integer, primary_key=True)
     start = db.Column(db.Integer, db.ForeignKey('station.id'))
@@ -388,6 +389,7 @@ class Edge(db.Model, CRUDMixin):
 
 
 class Route(db.Model, CRUDMixin):
+    """A collection of nodes (stations) and edges."""
 
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.String)
@@ -436,16 +438,18 @@ def fetch_route(route_id):
 def test():
     app = create_app(__name__)
     with app.app_context():
-        stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
+        # stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
+        #
+        # stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)
+        #
+        # # for station in stations_in_boundary:
+        # #     if station.cost == float('inf'):
+        # #         print(station, station.edges)
+        #
+        # graph = Map.build_graph(stations)
+        # Map.calculate_distance_for_all_nodes(graph, 2559)
 
-        stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)
-
-        # for station in stations_in_boundary:
-        #     if station.cost == float('inf'):
-        #         print(station, station.edges)
-
-        graph = Map.build_graph(stations)
-        Map.calculate_distance_for_all_nodes(graph, 2559)
+        print(list(Station.get(5378).get_bus_route_ids()))
 
 
 @cli.command()

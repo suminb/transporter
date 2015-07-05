@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for
 from flask import request, render_template, redirect, jsonify
 from logbook import Logger
 from collections import deque
-from transporter.models import Route, GraphNode
+from transporter.models import Route, Station, GraphNode
 from transporter.utils import get_nearby_stations, build_graph
 
 api_module = Blueprint(
@@ -28,24 +28,7 @@ def build_nodes_for_route(route):
     return nodes
 
 
-@api_module.route('/nearest_stations')
-def nearest_stations():
-
-    latitude = request.args.get('latitude')
-    longitude = request.args.get('longitude')
-
-    stations = get_nearby_stations(latitude, longitude)
-
-    return jsonify(stations=stations)
-
-
-@api_module.route('/route/<int:route_id>')
-def route(route_id):
-
-    route = Route.get_or_404(route_id)
-
-    nodes = build_nodes_for_route(route)
-
+def calculate_costs(nodes):
     cost = {}
     prev = {}
     queue = deque()
@@ -76,13 +59,39 @@ def route(route_id):
         except ValueError:
             pass
 
-        for v in u.neighbors:
-            c = 1
+        for v, c in u.neighbor_cost_pairs:
             if cost[u.data.id] + c < cost[v.data.id]:
                 cost[v.data.id] = cost[u.data.id] + c
                 prev[v.data.id] = u
 
-    import pdb; pdb.set_trace()
+
+@api_module.route('/station/<int:station_id>/routes')
+def station_routes(station_id):
+    """Request all routes that go through a given station."""
+
+    station = Station.get_or_404(station_id)
+
+    return jsonify(station=station.serialize(),
+                   routes=[r.serialize(excludes=['raw']) for r in station.routes])
+
+
+@api_module.route('/nearest_stations')
+def nearest_stations():
+
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+
+    stations = get_nearby_stations(latitude, longitude)
+
+    return jsonify(stations=stations)
+
+
+@api_module.route('/route/<int:route_id>')
+def route(route_id):
+
+    route = Route.get_or_404(route_id)
+
+    nodes = build_nodes_for_route(route)
 
     return jsonify(route=route.serialize(attributes=[], excludes=['raw']),
                    stations=[x.serialize() for x in route.stations],
