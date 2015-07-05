@@ -7,6 +7,33 @@
 </script>
 <script>
 
+// Copied from http://michalbe.blogspot.kr/2011/02/javascript-random-numbers-with-custom.html
+var CustomRandom = function(nseed) {
+    var seed,
+        constant = Math.pow(2, 13)+1,
+        prime = 37,
+        maximum = Math.pow(2, 50);
+
+    if (nseed) {
+        seed = nseed;
+    }
+
+    if (seed == null) {
+        // if there is no seed, use timestamp
+        seed = (new Date()).getTime();
+    }
+
+    return {
+        next : function() {
+            seed *= constant;
+            seed += prime;
+            seed %= maximum;
+
+            return seed;
+        }
+    }
+}
+
 function getNearestStations(coordinate, callback) {
     var params = {
         latitude: coordinate.A,
@@ -32,12 +59,13 @@ function drawHeatmap(heatmapData) {
     heatmap.setMap(map);
 }
 
-function drawPaths(pathData) {
+function drawPaths(pathData, routeIndex) {
+    var random = CustomRandom(routeIndex);
     var path = new google.maps.Polyline({
         path: pathData,
         geodesic: true,
-        strokeColor: '#FF0000',
-        strokeOpacity: 1.0,
+        strokeColor: '#' + (random.next() % 0xFFFFFF).toString(16),
+        strokeOpacity: .75,
         strokeWeight: 3
     });
 
@@ -46,8 +74,15 @@ function drawPaths(pathData) {
 
 function test(coordinate) {
     getNearestStations(coordinate, function(response) {
-        console.log(response);
-
+        // $.map(response.routes, function(v, i) {
+        //     return new google.maps.LatLng(v.latitude, v.longitude);
+        // });
+        $.each(response.routes, function(index, value) {
+            var data = $.map(value.entries, function(v, i) {
+                return new google.maps.LatLng(v.latitude, v.longitude);
+            });
+            drawPaths(data, index);
+        });
     });
 }
 
@@ -64,7 +99,8 @@ $(function() {
     map = new google.maps.Map(document.getElementById('map-canvas'), {
         center: center,
         zoom: 13,
-        mapTypeId: google.maps.MapTypeId.MAP
+        mapTypeId: google.maps.MapTypeId.MAP,
+        disableDoubleClickZoom: true
     });
 
     google.maps.event.addListener(map, 'rightclick', function(e) {
