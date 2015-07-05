@@ -16,20 +16,32 @@ function drawHeatmap(heatmapData) {
     heatmap.setMap(map);
 }
 
+function drawPaths(pathData) {
+  var path = new google.maps.Polyline({
+      path: pathData,
+      geodesic: true,
+      strokeColor: '#FF0000',
+      strokeOpacity: 1.0,
+      strokeWeight: 3
+  });
+
+  path.setMap(map);
+}
+
 $(function() {
     $.get('/api/route/4940100', function(response) {
         var data = $.map(response.stations, function(v, i) {
-            return {location: new google.maps.LatLng(v.latitude, v.longitude), weight: 1};
+            return new google.maps.LatLng(v.latitude, v.longitude);
         });
-        drawHeatmap(data);
+        drawPaths(data);
     });
 
     var center = new google.maps.LatLng(37.394874, 127.111239);
 
     map = new google.maps.Map(document.getElementById('map-canvas'), {
-      center: center,
-      zoom: 13,
-      mapTypeId: google.maps.MapTypeId.MAP
+        center: center,
+        zoom: 13,
+        mapTypeId: google.maps.MapTypeId.MAP
     });
 });
 
