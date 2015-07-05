@@ -5,6 +5,7 @@
 <script type="text/javascript"
   src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
 </script>
+<script type="text/javascript" src="/static/sprintf.js"></script>
 <script>
 
 // Copied from http://michalbe.blogspot.kr/2011/02/javascript-random-numbers-with-custom.html
@@ -64,15 +65,15 @@ function drawPaths(pathData, routeIndex) {
     var path = new google.maps.Polyline({
         path: pathData,
         geodesic: true,
-        strokeColor: '#' + (random.next() % 0xFFFFFF).toString(16),
-        strokeOpacity: .75,
-        strokeWeight: 3
+        strokeColor: sprintf('#%06x', (random.next() * 12345 + random.next()) % 0xFFFFFF),
+        strokeOpacity: .5,
+        strokeWeight: 2
     });
 
     path.setMap(map);
 }
 
-function test(coordinate) {
+function drawRoutes(coordinate) {
     getNearestStations(coordinate, function(response) {
         // $.map(response.routes, function(v, i) {
         //     return new google.maps.LatLng(v.latitude, v.longitude);
@@ -98,7 +99,7 @@ $(function() {
 
     google.maps.event.addListener(map, 'rightclick', function(e) {
         var coordinate = e.latLng;
-        test(e.latLng);
+        drawRoutes(e.latLng);
     });
 });
 
