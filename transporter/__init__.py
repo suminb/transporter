@@ -2,7 +2,7 @@ from flask import Flask
 from flask.ext.redis import FlaskRedis
 import os
 
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 redis_store = FlaskRedis()
 
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
