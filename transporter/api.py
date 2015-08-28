@@ -1,10 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for
-from flask import request, render_template, redirect, jsonify
+from flask import Blueprint, request, jsonify
 from logbook import Logger
 from collections import deque
-from transporter.models import Route, Station, GraphNode
-from transporter.utils import get_nearest_stations, build_graph, \
-                              get_routes_for_station, get_route
+from transporter.models import GraphNode
+from transporter.utils import get_nearest_stations, get_routes_for_station, \
+    get_route
 
 api_module = Blueprint(
     'api', __name__, template_folder='templates/api')
@@ -21,9 +20,11 @@ def build_nodes_for_route(route):
 
     for edge in route.edges:
         if edge.start not in nodes:
-            log.warn('Node for station {} does not exist (start)'.format(edge.start))
+            log.warn('Node for station {} does not exist (start)'
+                     .format(edge.start))
         elif edge.end not in nodes:
-            log.warn('Node for station {} does not exist (end)'.format(edge.start))
+            log.warn('Node for station {} does not exist (end)'
+                     .format(edge.start))
         else:
             nodes[edge.start].add_neighbor(nodes[edge.end])
 
@@ -82,7 +83,6 @@ def nearest_stations():
     routes = [get_routes_for_station(s['ars_id']) for s in stations]
 
     entries = sum([r['entries'] for r in routes if len(r) > 0], [])
-    #import pdb; pdb.set_trace()
     routes = [get_route(x['route_id']) for x in entries]
 
     return jsonify(stations=stations, routes=routes)
