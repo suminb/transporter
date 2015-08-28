@@ -113,11 +113,13 @@ def auto_fetch(url):
             data = redis_store.get(key)
 
             if data is None:
-                log.info('Data entry for "{}" does not exist. Fetching one.'.format(key))
+                log.info('Data entry for "{}" does not exist. Fetching one.'
+                         .format(key))
                 data = func(*args, **kwargs)
                 redis_store.set(key, json.dumps(data))
             else:
-                log.info('Data entry for "{}" was loaded from cache.'.format(key))
+                log.info('Data entry for "{}" was loaded from cache.'
+                         .format(key))
                 data = json.loads(data.decode('utf-8'))
 
             return data
@@ -207,7 +209,7 @@ def stations_with_aux_info(raw):
         if prev_station_info is not None:
             time_diff = guess_time_diff(prev_station_info, station_info)
         else:
-            time_diff = 3600*24
+            time_diff = 3600 * 24
 
         buf.append(dict(station_id=station_info['station'],
                         time=station_info['beginTm'],

@@ -1,6 +1,6 @@
 {% extends 'layout.html' %}
 {% block content %}
-<div id="map-canvas" style="top:0;left:0;width:100%;height:720px;position:absolute;"></div>
+<div id="map-canvas" style="top:0;left:0;width:100%;height:960px;position:absolute;"></div>
 
 <script type="text/javascript"
   src="https://maps.googleapis.com/maps/api/js?libraries=visualization&sensor=true_or_false">
@@ -37,9 +37,10 @@ var CustomRandom = function(nseed) {
 
 function getNearestStations(coordinate, callback) {
     var params = {
-        latitude: coordinate.A,
-        longitude: coordinate.F
+        latitude: coordinate.G,
+        longitude: coordinate.K
     }
+    console.log(coordinate);
     $.get('/api/nearest_stations', data=params, callback);
 }
 
