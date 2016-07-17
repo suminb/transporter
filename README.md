@@ -24,6 +24,8 @@ Copy `provision.sh.dist` to `provision.sh`.
 
     cp provision.sh.dist provision.sh
 
+Then edit `provision.sh` to set `DB_URI` and `REDIS_URL`.
+
 Run
 ===
 
