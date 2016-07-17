@@ -1,0 +1,3 @@
+export PYTHONPATH=.
+export DB_URI=""
+export REDIS_URL=""
