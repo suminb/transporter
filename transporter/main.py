@@ -7,6 +7,5 @@ main_module = Blueprint(
 
 @main_module.route('/')
 def index():
-    context = dict(
-    )
+    context = {}
     return render_template('index.html', **context)
