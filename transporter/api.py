@@ -76,8 +76,8 @@ def routes_for_station(ars_id):
 @api_module.route('/nearest_stations')
 def nearest_stations():
 
-    latitude = request.args.get('latitude')
-    longitude = request.args.get('longitude')
+    latitude = request.args['latitude']
+    longitude = request.args['longitude']
 
     stations = get_nearest_stations(latitude, longitude)
     routes = [get_routes_for_station(s['ars_id']) for s in stations]
