@@ -1,5 +1,5 @@
 from flask import Flask
-from flask.ext.redis import FlaskRedis
+from flask_redis import FlaskRedis
 import os
 
 __version__ = '0.9.0'

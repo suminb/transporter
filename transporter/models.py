@@ -1,6 +1,6 @@
 from transporter import create_app
 from transporter.utils import store_route_info
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSON
 from geopy.distance import vincenty
