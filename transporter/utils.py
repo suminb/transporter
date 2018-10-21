@@ -182,6 +182,8 @@ def get_routes_for_station(ars_id):
 
 
 def get_route(route_id):
+    """Given a route ID, returns route info. The route_id is not a bus number.
+    """
     route_info_url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
     resp = requests.post(route_info_url, data=dict(busRouteId=route_id))
 
