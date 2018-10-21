@@ -45,7 +45,8 @@ route_edge_assoc = db.Table(
 
 class Bound(object):
     """Represents a geographical bound."""
-    def __init__(self, sw_latitude: float, sw_longitude: float, ne_latitude: float, ne_longitude: float):
+    def __init__(self, sw_latitude: float, sw_longitude: float,
+                 ne_latitude: float, ne_longitude: float):
         self.sw = Point(latitude=sw_latitude, longitude=sw_longitude)
         self.ne = Point(latitude=ne_latitude, longitude=ne_longitude)
 
@@ -173,11 +174,13 @@ class Map(object):
 
     @staticmethod
     def phase1(starting_point, radius: float, stations: list):
-        """Given a starting point, find all vertices (stations) within a rectangular bound. Initially, all vertices
-        have an infinite cost."""
+        """Given a starting point, find all vertices (stations) within a
+        rectangular bound. Initially, all vertices have an infinite cost.
+        """
 
         for station in stations:
-            location = Point(latitude=station.latitude, longitude=station.longitude)
+            location = Point(
+                latitude=station.latitude, longitude=station.longitude)
             distance = vincenty(starting_point, location).m
 
             if distance <= radius:
@@ -249,13 +252,16 @@ class Station(db.Model, CRUDMixin):
 
     Request Example: (정류장을 거쳐가는 버스 정보)
 
-        curl 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms' -H 'Host: m.bus.go.kr' \
+        curl 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
+         -H 'Host: m.bus.go.kr' \
          -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' \
-         -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' \
-         --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' \
+         -H 'Accept: application/json, text/javascript, */*; q=0.01' \
+         -H 'Accept-Language: en-US,en;q=0.5' \
+         -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' \
          -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' \
          -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=eFsTjEaatS5rpOJ5lzkyofvYO4PF1BeaJRtuSvxXTpXCoREz6prkf17gDanTE4b3.bms-info1_servlet_engine32' \
-         -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'arsId=47105'
+         -H 'Connection: keep-alive' -H 'Pragma: no-cache' \
+         -H 'Cache-Control: no-cache' --data 'arsId=47105'
 
     Response Example:
 
@@ -324,9 +330,12 @@ class Station(db.Model, CRUDMixin):
     latitude = db.Column(db.Float(precision=53))
     longitude = db.Column(db.Float(precision=53))
 
-    routes = db.relationship('Route', secondary=route_station_assoc, backref='station', lazy='dynamic')
+    routes = db.relationship(
+        'Route', secondary=route_station_assoc, backref='station',
+        lazy='dynamic')
 
-    def __init__(self, id: int, number: str, name: str, latitude: float, longitude: float):
+    def __init__(self, id: int, number: str, name: str, latitude: float,
+                 longitude: float):
         """
 
         :param id:
@@ -358,15 +367,19 @@ class Station(db.Model, CRUDMixin):
     def get_distance_to(self, latitude, longitude):
         assert self.latitude is not None
         assert self.longitude is not None
-        return vincenty((latitude, longitude), (self.latitude, self.longitude)).m
+        return vincenty(
+            (latitude, longitude), (self.latitude, self.longitude)).m
 
     def calculate_distance_to_stations(self, stations: list):
-        """Calculate the distance from a particular station to each station in the list."""
+        """Calculate the distance from a particular station to each station in
+        the list.
+        """
         for station in stations:
             import pdb; pdb.set_trace()
 
     @staticmethod
-    def get_stations_in_bound(sw_latitude: float, sw_longitude: float, ne_latitude: float, ne_longitude: float):
+    def get_stations_in_bound(sw_latitude: float, sw_longitude: float,
+                              ne_latitude: float, ne_longitude: float):
         # Pathological case:
         # SW = (0, 350), NE = (10, 10)
         return Station.query \
@@ -398,9 +411,12 @@ class Route(db.Model, CRUDMixin):
     type = db.Column(db.Integer)
 
     #: Many-to-many relationship between route and station
-    stations = db.relationship('Station', secondary=route_station_assoc, backref='route', lazy='dynamic')
+    stations = db.relationship(
+        'Station', secondary=route_station_assoc, backref='route',
+        lazy='dynamic')
 
-    edges = db.relationship('Edge', secondary=route_edge_assoc, backref='route', lazy='dynamic')
+    edges = db.relationship(
+        'Edge', secondary=route_edge_assoc, backref='route', lazy='dynamic')
 
     raw = db.Column(JsonType)
 
@@ -414,7 +430,8 @@ def cli():
 def gdb():
     app = create_app(__name__)
     with app.app_context():
-        import pdb; pdb.set_trace()
+        import pdb
+        pdb.set_trace()
         pass
 
 
@@ -462,6 +479,7 @@ def fetch_all_routes():
                 store_route_info(route_id)
             except:
                 time.sleep(10)
+
 
 if __name__ == '__main__':
     cli()
