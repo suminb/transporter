@@ -1,3 +1,4 @@
+provision.sh
 *.pyc
 
 # Elastic Beanstalk Files

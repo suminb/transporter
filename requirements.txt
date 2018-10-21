@@ -1,7 +1,7 @@
 requests
-flask
-flask-sqlalchemy
-flask-redis
+flask>=1.0.2,<2.0.0
+flask-sqlalchemy>=2.3.2,<3.0.0
+flask-redis>=0.3.0,<1.0.0
 geopy
 click
 psycopg2

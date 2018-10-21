@@ -1,8 +1,7 @@
-from . import app
-import os
 import json
+import os
 
-TEST_FILE_BASE_PATH = 'transporter/tests'
+TEST_FILE_BASE_PATH = 'tests'
 
 
 def __test_pages(app):
@@ -25,7 +24,7 @@ def test_nearest_stations_mapper():
         "posX": "210931.81833",
         "posY": "433403.53304",
         "stationId": "52913",
-        "stationNm": "\uc544\ub984\ub9c8\uc744.\ubc29\uc544\ub2e4\ub9ac\uc0ac\uac70\ub9ac",
+        "stationNm": "\uc544\ub984\ub9c8\uc744.\ubc29\uc544\ub2e4\ub9ac\uc0ac\uac70\ub9ac",  # noqa
         "stationTp": "0"
     }
 
