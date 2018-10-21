@@ -1,17 +1,18 @@
-from transporter import create_app
-from transporter.utils import store_route_info
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import JSON
-from geopy.distance import vincenty
-from geopy.point import Point
-from datetime import datetime, timedelta
-from logbook import Logger
 from collections import deque
-import click
-import requests
+from datetime import datetime
 import json
 import time
+
+import click
+from flask_sqlalchemy import SQLAlchemy
+from geopy.distance import vincenty
+from geopy.point import Point
+from logbook import Logger
+import requests
+from sqlalchemy.dialects.postgresql import JSON
+
+from transporter import create_app
+from transporter.utils import store_route_info
 
 
 db = SQLAlchemy()
