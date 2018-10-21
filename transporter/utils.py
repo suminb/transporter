@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
+import json
+
 from logbook import Logger
 from sqlalchemy.exc import IntegrityError
-from transporter import redis_store
-import json
 import requests
+
+from transporter import redis_store
 
 
 log = Logger(__name__)
@@ -131,7 +133,18 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
     """
     Request Example:
 
-         curl 'http://m.bus.go.kr/mBus/bus/getStationByPos.bms' -H 'Host: m.bus.go.kr' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' -H 'Accept: application/json, text/javascript, */*; q=0.01' -H 'Accept-Language: en-US,en;q=0.5' --compressed -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' -H 'X-Requested-With: XMLHttpRequest' -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=j4msoXxp7Kb3T9EXKtcmmAOyAc9GpawnTv1VI981MuQNkpo86W8bFPGki47MCaEq.bms-info1_servlet_engine32' -H 'Connection: keep-alive' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data 'tmX=127.1223458&tmY=37.3988069&radius=300' | iconv -f cp949 -t utf-8 | python -m json.tool
+        curl 'http://m.bus.go.kr/mBus/bus/getStationByPos.bms' \
+         -H 'Host: m.bus.go.kr' \
+         -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0' \
+         -H 'Accept: application/json, text/javascript, */*; q=0.01' \
+         -H 'Accept-Language: en-US,en;q=0.5' \
+         -H 'Content-Type: application/x-www-form-urlencoded;charset=UTF-8;' \
+         -H 'X-Requested-With: XMLHttpRequest' \
+         -H 'Referer: http://m.bus.go.kr/mBus/nearbus.bms' \
+         -H 'Cookie: WMONID=Pj5S8wTXe2x; JSESSIONID=j4msoXxp7Kb3T9EXKtcmmAOyAc9GpawnTv1VI981MuQNkpo86W8bFPGki47MCaEq.bms-info1_servlet_engine32' \
+         -H 'Connection: keep-alive' -H 'Pragma: no-cache' \
+         -H 'Cache-Control: no-cache' \
+         --data 'tmX=127.1223458&tmY=37.3988069&radius=300' | iconv -f cp949 -t utf-8 | python -m json.tool  # noqa
 
     Response Example:
 
@@ -273,7 +286,9 @@ def store_route_info(route_id: int):
             station_number = None
 
         if station_number == 0:
-            log.warn('Rejecting station {} for having a station number of zero'.format(station_info['stationNm']))
+            log.warn(
+                'Rejecting station {0} for having a station number of zero'
+                ''.format(station_info['stationNm']))
             continue
 
         try:
@@ -291,7 +306,8 @@ def store_route_info(route_id: int):
 
         except IntegrityError:
             db.session.rollback()
-            log.info('Already exists: station {}'.format(station_info['stationNm']))
+            log.info('Already exists: station {0}'.format(
+                station_info['stationNm']))
 
         if (prev_station is not None) and (prev_station_info is not None):
             time_diff = guess_time_diff(prev_station_info, station_info)
@@ -305,13 +321,17 @@ def store_route_info(route_id: int):
                 )
                 route.edges.append(edge)
                 db.session.commit()
-                log.info('Stored edge from {} to {}'.format(prev_station, station))
+                log.info(
+                    'Stored edge from {} to {}'.format(prev_station, station))
             except IntegrityError:
                 db.session.rollback()
-                log.info('Could not create an edge from {} to {}'.format(prev_station, station))
+                log.info(
+                    'Could not create an edge from {} to {}'.format(
+                        prev_station, station))
 
         prev_station = station
         prev_station_info = station_info
+
 
 def build_graph(stations):
 

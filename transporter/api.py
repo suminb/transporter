@@ -1,9 +1,12 @@
+from collections import deque
+
 from flask import Blueprint, request, jsonify
 from logbook import Logger
-from collections import deque
+
 from transporter.models import GraphNode
 from transporter.utils import get_nearest_stations, get_routes_for_station, \
     get_route
+
 
 api_module = Blueprint(
     'api', __name__, template_folder='templates/api')

@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 TEST_FILE_BASE_PATH = 'tests'
 

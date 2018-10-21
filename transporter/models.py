@@ -139,7 +139,7 @@ class CRUDMixin(object):
         Copied from http://stackoverflow.com/questions/7102754/jsonify-a-sqlalchemy-result-set-in-flask
 
         :param attributes: Additional attributes to serialize
-        """
+        """  # noqa
         convert = dict()
         # add your coversions for things like datetime's
         # and what-not that aren't serializable.
@@ -320,7 +320,7 @@ class Station(db.Model, CRUDMixin):
                 ...
             ]
         }
-    """
+    """  # noqa
     #: Cached data
     bus_route_ids = None
 
@@ -455,9 +455,9 @@ def fetch_route(route_id):
 def test():
     app = create_app(__name__)
     with app.app_context():
-        # stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()
+        # stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()  # noqa
         #
-        # stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)
+        # stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)  # noqa
         #
         # # for station in stations_in_boundary:
         # #     if station.cost == float('inf'):
