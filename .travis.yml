@@ -8,7 +8,7 @@ install:
 
 script:
 - export PYTHONPATH=$PYTHONPATH:.
-- py.test transporter/tests --cov transporter --durations=10
+- py.test -v tests --cov transporter --durations=10
 
 after_success:
 - coveralls
