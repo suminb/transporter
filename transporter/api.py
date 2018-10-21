@@ -1,9 +1,12 @@
+from collections import deque
+
 from flask import Blueprint, request, jsonify
 from logbook import Logger
-from collections import deque
+
 from transporter.models import GraphNode
 from transporter.utils import get_nearest_stations, get_routes_for_station, \
     get_route
+
 
 api_module = Blueprint(
     'api', __name__, template_folder='templates/api')
@@ -76,8 +79,8 @@ def routes_for_station(ars_id):
 @api_module.route('/nearest_stations')
 def nearest_stations():
 
-    latitude = request.args.get('latitude')
-    longitude = request.args.get('longitude')
+    latitude = request.args['latitude']
+    longitude = request.args['longitude']
 
     stations = get_nearest_stations(latitude, longitude)
     routes = [get_routes_for_station(s['ars_id']) for s in stations]

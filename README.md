@@ -26,6 +26,16 @@ Copy `provision.sh.dist` to `provision.sh`.
 
 Then edit `provision.sh` to set `DB_URI` and `REDIS_URL`.
 
+
+Auxiliary Services
+==================
+
+We need a Redis server. It is recommended to use fully-managed Redis service
+for production, but it is sufficient to run a Redis server with Docker for
+development purposes.
+
+    docker run -d -p 6379:6379 -p 6380:6380 redis
+
 Run
 ===
 

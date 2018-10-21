@@ -1,5 +1,6 @@
-from transporter import create_app
 import pytest
+
+from transporter import create_app
 
 
 @pytest.fixture(scope='function')
@@ -9,7 +10,8 @@ def app(request):
         'TESTING': True,
         # 'SQLALCHEMY_DATABASE_URI': TEST_DATABASE_URI,
     }
-    app = create_app(__name__, config=settings_override, template_folder='../templates')
+    app = create_app(__name__, config=settings_override,
+                     template_folder='../templates')
 
     # Establish an application context before running the tests.
     ctx = app.app_context()

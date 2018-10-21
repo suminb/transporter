@@ -1,6 +1,8 @@
+import os
+
 from flask import Flask
 from flask_redis import FlaskRedis
-import os
+
 
 __version__ = '0.9.0'
 redis_store = FlaskRedis()
