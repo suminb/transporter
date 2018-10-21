@@ -174,16 +174,16 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
 
 @auto_fetch('http://m.bus.go.kr/mBus/bus/getStationByUid.bms')
 def get_routes_for_station(ars_id):
-    STATION_URL = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
-    resp = requests.post(STATION_URL, data=dict(arsId=ars_id))
+    station_url = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
+    resp = requests.post(station_url, data=dict(arsId=ars_id))
     mapper = RoutesForStationMapper()
 
     return mapper.transform(json.loads(resp.text))
 
 
 def get_route(route_id):
-    ROUTE_INFO_URL = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
-    resp = requests.post(ROUTE_INFO_URL, data=dict(busRouteId=route_id))
+    route_info_url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
+    resp = requests.post(route_info_url, data=dict(busRouteId=route_id))
 
     mapper = RouteMapper()
 
