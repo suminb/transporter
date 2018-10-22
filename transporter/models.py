@@ -1,18 +1,13 @@
 from collections import deque
 from datetime import datetime
 import json
-import time
 
-import click
 from flask_sqlalchemy import SQLAlchemy
 from geopy.distance import vincenty
 from geopy.point import Point
 from logbook import Logger
 import requests
 from sqlalchemy.dialects.postgresql import JSON
-
-from transporter import create_app
-from transporter.utils import store_route_info
 
 
 db = SQLAlchemy()
@@ -389,6 +384,9 @@ class Station(db.Model, CRUDMixin):
             .filter(Station.longitude <= ne_longitude)
 
 
+# NOTE: How are we going to store the actual routes (roads taken by buses)?
+# Even if two routes share the same edge (station to station), the actual roads
+# may differ.
 class Edge(db.Model, CRUDMixin):
     """Connects two nodes (stations)."""
 
@@ -419,67 +417,3 @@ class Route(db.Model, CRUDMixin):
         'Edge', secondary=route_edge_assoc, backref='route', lazy='dynamic')
 
     raw = db.Column(JsonType)
-
-
-@click.group()
-def cli():
-    pass
-
-
-@cli.command()
-def gdb():
-    app = create_app(__name__)
-    with app.app_context():
-        import pdb
-        pdb.set_trace()
-        pass
-
-
-@cli.command()
-def create_db():
-    """Create an empty database and tables."""
-    app = create_app(__name__)
-    with app.app_context():
-        db.create_all()
-
-
-@cli.command()
-@click.argument('route_id', type=int)
-def fetch_route(route_id):
-    app = create_app(__name__)
-    with app.app_context():
-        store_route_info(route_id)
-
-
-@cli.command()
-def test():
-    app = create_app(__name__)
-    with app.app_context():
-        # stations_in_boundary = Station.get_stations_in_bound(37.482436, 127.017697, 37.520295, 127.062329).all()  # noqa
-        #
-        # stations = Map.phase1(starting_point=Point(37.497793, 127.027611), radius=500, stations=stations_in_boundary)  # noqa
-        #
-        # # for station in stations_in_boundary:
-        # #     if station.cost == float('inf'):
-        # #         print(station, station.edges)
-        #
-        # graph = Map.build_graph(stations)
-        # Map.calculate_distance_for_all_nodes(graph, 2559)
-
-        print(list(Station.get(5378).get_bus_route_ids()))
-
-
-@cli.command()
-def fetch_all_routes():
-    app = create_app(__name__)
-    with app.app_context():
-        for route_id in range(3014600, 3015000, 100):
-            log.info('Fetching route {}...'.format(route_id))
-            try:
-                store_route_info(route_id)
-            except:
-                time.sleep(10)
-
-
-if __name__ == '__main__':
-    cli()
