@@ -176,6 +176,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
     resp = requests.post(url, data=data)
 
     try:
+        # FIXME: Handle one error at a time
         rows = json.loads(resp.text)['resultList']
     except ValueError:
         return 'Could not load data', 500
@@ -187,6 +188,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
 
 @auto_fetch('http://m.bus.go.kr/mBus/bus/getStationByUid.bms')
 def get_routes_for_station(ars_id):
+    """Get route information that goes through a particular station."""
     station_url = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
     resp = requests.post(station_url, data={'arsId': ars_id})
     mapper = RoutesForStationMapper()
