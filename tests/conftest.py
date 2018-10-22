@@ -1,6 +1,6 @@
 import pytest
 
-from transporter import create_app
+from transporter import create_app, redis_store
 
 
 @pytest.fixture(scope='function')
@@ -12,6 +12,8 @@ def app(request):
     }
     app = create_app(__name__, config=settings_override,
                      template_folder='../templates')
+
+    redis_store.init_app(app)
 
     # Establish an application context before running the tests.
     ctx = app.app_context()
