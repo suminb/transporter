@@ -151,7 +151,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
         {
             "error": {
                 "errorCode": "0000",
-                "errorMessage": "\uc131\uacf5"
+                "errorMessage": "성공"
             },
             "resultList": [
                 {
@@ -162,7 +162,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
                     "posX": "210931.81833",
                     "posY": "433403.53304",
                     "stationId": "52913",
-                    "stationNm": "\uc544\ub984\ub9c8\uc744.\ubc29\uc544\ub2e4\ub9ac\uc0ac\uac70\ub9ac",
+                    "stationNm": "아름마을.방아다리사거리",
                     "stationTp": "0"
                 },
                 ...
