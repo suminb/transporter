@@ -135,10 +135,10 @@ class CRUDMixin(object):
 
         :param attributes: Additional attributes to serialize
         """  # noqa
-        convert = dict()
+        convert = {}
         # add your coversions for things like datetime's
         # and what-not that aren't serializable.
-        d = dict()
+        d = {}
         for c in self.__table__.columns:
             if c.name not in excludes:
                 v = getattr(self, c.name)
@@ -356,7 +356,7 @@ class Station(db.Model, CRUDMixin):
 
     def fetch(self):
         from transporter.bus import STATION_URL
-        resp = requests.post(STATION_URL, data=dict(arsId=self.id))
+        resp = requests.post(STATION_URL, data={'arsId': self.id})
         return json.loads(resp.text)
 
     def get_distance_to(self, latitude, longitude):
