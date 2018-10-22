@@ -1,16 +1,20 @@
 language: python
 
 python:
-- '3.7-dev'
+  - '3.7-dev'
+
+services:
+  - redis-server
 
 install:
-- pip install -r requirements.txt
+  - pip install -r requirements.txt
 
 script:
-- export PYTHONPATH=$PYTHONPATH:.
-- py.test -v tests --cov transporter --durations=10
+  - export PYTHONPATH=$PYTHONPATH:.
+  - export REDIS_URL="localhost:6379"
+  - py.test -v tests --cov transporter --durations=10
 
 after_success:
-- coveralls
+  - coveralls
 
 env:
