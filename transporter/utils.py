@@ -151,7 +151,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
         {
             "error": {
                 "errorCode": "0000",
-                "errorMessage": "\uc131\uacf5"
+                "errorMessage": "성공"
             },
             "resultList": [
                 {
@@ -162,7 +162,7 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
                     "posX": "210931.81833",
                     "posY": "433403.53304",
                     "stationId": "52913",
-                    "stationNm": "\uc544\ub984\ub9c8\uc744.\ubc29\uc544\ub2e4\ub9ac\uc0ac\uac70\ub9ac",
+                    "stationNm": "아름마을.방아다리사거리",
                     "stationTp": "0"
                 },
                 ...
@@ -171,11 +171,12 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
 
     """
     url = 'http://m.bus.go.kr/mBus/bus/getStationByPos.bms'
-    data = dict(tmX=longitude, tmY=latitude, radius=radius)
+    data = {'tmX': longitude, 'tmY': latitude, 'radius': radius}
 
     resp = requests.post(url, data=data)
 
     try:
+        # FIXME: Handle one error at a time
         rows = json.loads(resp.text)['resultList']
     except ValueError:
         return 'Could not load data', 500
@@ -187,8 +188,9 @@ def get_nearest_stations(latitude: float, longitude: float, radius: int=300):
 
 @auto_fetch('http://m.bus.go.kr/mBus/bus/getStationByUid.bms')
 def get_routes_for_station(ars_id):
+    """Get route information that goes through a particular station."""
     station_url = 'http://m.bus.go.kr/mBus/bus/getStationByUid.bms'
-    resp = requests.post(station_url, data=dict(arsId=ars_id))
+    resp = requests.post(station_url, data={'arsId': ars_id})
     mapper = RoutesForStationMapper()
 
     return mapper.transform(json.loads(resp.text))
@@ -198,7 +200,7 @@ def get_route(route_id):
     """Given a route ID, returns route info. The route_id is not a bus number.
     """
     route_info_url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
-    resp = requests.post(route_info_url, data=dict(busRouteId=route_id))
+    resp = requests.post(route_info_url, data={'busRouteId': route_id})
 
     mapper = RouteMapper()
 
@@ -226,9 +228,9 @@ def stations_with_aux_info(raw):
         else:
             time_diff = 3600 * 24
 
-        buf.append(dict(station_id=station_info['station'],
-                        time=station_info['beginTm'],
-                        time_diff=time_diff))
+        buf.append({'station_id': station_info['station'],
+                    'time': station_info['beginTm'],
+                    'time_diff': time_diff})
 
         prev_station_info = station_info
 
@@ -239,7 +241,7 @@ def fetch_route_raw(route_id: int):
     """Fetch raw JSON data for a particular route."""
 
     url = 'http://m.bus.go.kr/mBus/bus/getRouteAndPos.bms'
-    data = dict(busRouteId=route_id)
+    data = {'busRouteId': route_id}
 
     resp = requests.post(url, data=data)
 
@@ -340,10 +342,10 @@ def build_graph(stations):
     graph = {}
 
     for station in stations:
-        graph[station.id] = dict(
-            node=GraphNode(station.id, inf),
-            edges=set([(e.end, e.average_time) for e in station.edges])
-        )
+        graph[station.id] = {
+            'node': GraphNode(station.id, inf),
+            'edges': set([(e.end, e.average_time) for e in station.edges])
+        }
 
     # Filter out non-existing graph nodes
     # for key, value in graph.items():
