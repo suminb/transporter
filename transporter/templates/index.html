@@ -36,9 +36,11 @@ var CustomRandom = function(nseed) {
 }
 
 function getNearestStations(coordinate, callback) {
+    // NOTE: This relies on an undocumented feature, so it may break at any
+    // moment.
     var params = {
-        latitude: coordinate.G,
-        longitude: coordinate.K
+        latitude: coordinate.lat(),
+        longitude: coordinate.lng()
     }
     console.log(coordinate);
     $.get('/api/nearest_stations', data=params, callback);
