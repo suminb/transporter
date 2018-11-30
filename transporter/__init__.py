@@ -11,11 +11,15 @@ template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'templates')
 
 
-def create_app(name=__name__, config={},
+def create_app(name=__name__, config=None,
                static_folder='transporter/static',
                template_folder=template_dir):
     """NOTE: `db_uri` is only a temporary solution. It shall be replaced by
     something more robust."""
+
+    if config is None:
+        config = {}
+
     app = Flask(name, static_folder=static_folder,
                 template_folder=template_folder)
     app.secret_key = 'secret'
